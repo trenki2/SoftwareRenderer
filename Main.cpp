@@ -5,8 +5,8 @@ Vertex randomVertex()
 {
 	Vertex v;
 	
-	v.x = rand() % 640;
-	v.y = rand() % 480;
+	v.x = (float)(rand() % 640);
+	v.y = (float)(rand() % 480);
 
 	v.r = (float)rand() / RAND_MAX;
 	v.g = (float)rand() / RAND_MAX;
@@ -38,14 +38,14 @@ int main(int argc, char *argv[])
 
 	Uint32 start = SDL_GetTicks();
 
-	/*for (int i = 0; i < 10000; ++i)
+	for (int i = 0; i < 10000; ++i)
 	{
 		Vertex v0 = randomVertex();
 		Vertex v1 = randomVertex();
 		Vertex v2 = randomVertex();
 
 		r.drawTriangle(v0, v1, v2);
-	}*/
+	}
 
 	Vertex v0, v1, v2;
 
