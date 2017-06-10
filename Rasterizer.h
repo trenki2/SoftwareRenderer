@@ -202,6 +202,14 @@ struct EdgeData {
 		ev1 = eqn.e1.stepX(ev1);
 		ev2 = eqn.e2.stepX(ev2);
 	}
+	
+	/// Step the edge values in the x direction.
+	void stepX(const TriangleEquations &eqn, float stepSize)
+	{
+		ev0 = eqn.e0.stepX(ev0, stepSize);
+		ev1 = eqn.e1.stepX(ev1, stepSize);
+		ev2 = eqn.e2.stepX(ev2, stepSize);
+	}
 
 	/// Step the edge values in the y direction.
 	void stepY(const TriangleEquations &eqn)
@@ -209,6 +217,20 @@ struct EdgeData {
 		ev0 = eqn.e0.stepY(ev0);
 		ev1 = eqn.e1.stepY(ev1);
 		ev2 = eqn.e2.stepY(ev2);
+	}
+
+	/// Step the edge values in the y direction.
+	void stepY(const TriangleEquations &eqn, float stepSize)
+	{
+		ev0 = eqn.e0.stepY(ev0, stepSize);
+		ev1 = eqn.e1.stepY(ev1, stepSize);
+		ev2 = eqn.e2.stepY(ev2, stepSize);
+	}
+
+	/// Test for triangle containment.
+	bool test(const TriangleEquations &eqn)
+	{
+		return eqn.e0.test(ev0) && eqn.e1.test(ev1) && eqn.e2.test(ev2);
 	}
 };
 
@@ -362,32 +384,18 @@ public:
 			// Test if block is inside or outside triangle or touches it
 			float s = (float)BlockSize - 1;
 
-			float e0_00 = eqn.e0.evaluate(x, y);
-			float e0_10 = eqn.e0.stepX(e0_00, s);
-			float e0_01 = eqn.e0.stepY(e0_00, s);
-			float e0_11 = eqn.e0.stepX(e0_01, s);
+			EdgeData e00; e00.init(eqn, x, y);
+			EdgeData e01 = e00; e01.stepY(eqn, s);
+			EdgeData e10 = e00; e10.stepX(eqn, s);
+			EdgeData e11 = e01; e11.stepX(eqn, s);
 
-			float e1_00 = eqn.e1.evaluate(x, y);
-			float e1_10 = eqn.e1.stepX(e1_00, s);
-			float e1_01 = eqn.e1.stepY(e1_00, s);
-			float e1_11 = eqn.e1.stepX(e1_01, s);
-
-			float e2_00 = eqn.e2.evaluate(x, y);
-			float e2_10 = eqn.e2.stepX(e2_00, s);
-			float e2_01 = eqn.e2.stepY(e2_00, s);
-			float e2_11 = eqn.e2.stepX(e2_01, s);
-			
-			int in0 = eqn.e0.test(e0_00) && eqn.e1.test(e1_00) && eqn.e2.test(e2_00);
-			int in1 = eqn.e0.test(e0_10) && eqn.e1.test(e1_10) && eqn.e2.test(e2_10);
-			int in2 = eqn.e0.test(e0_01) && eqn.e1.test(e1_01) && eqn.e2.test(e2_01);
-			int in3 = eqn.e0.test(e0_11) && eqn.e1.test(e1_11) && eqn.e2.test(e2_11);
-			int sum = in0 + in1 + in2 + in3;
+			int result = e00.test(eqn) + e01.test(eqn) + e10.test(eqn) + e11.test(eqn);
 
 			// All out.
-			if (sum == 0)
+			if (result == 0)
 				continue;
 
-			if (sum == 4)
+			if (result == 4)
 				// Fully Covered
 				rasterizeBlock<false>(eqn, x, y);
 			else
