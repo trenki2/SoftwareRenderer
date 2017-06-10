@@ -41,13 +41,17 @@ void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
 
 class PixelShader : public PixelShaderBase<PixelShader> {
 public:
+	static const bool InterpolateZ = false;
+	static const bool InterpolateW = false;
+	static const int VarCount = 3;
+	
 	static SDL_Surface* surface;
 
 	static void drawPixel(const PixelData &p)
 	{
-		int rint = (int)(p.r * 255);
-		int gint = (int)(p.g * 255);
-		int bint = (int)(p.b * 255);
+		int rint = (int)(p.var[0] * 255);
+		int gint = (int)(p.var[1] * 255);
+		int bint = (int)(p.var[2] * 255);
 		Uint32 color = SDL_MapRGB(surface->format, rint, gint, bint);
 		putpixel(surface, (int)p.x, (int)p.y, color);
 	}
@@ -62,9 +66,9 @@ Vertex randomVertex()
 	v.x = (float)(rand() % 640);
 	v.y = (float)(rand() % 480);
 
-	v.r = (float)rand() / RAND_MAX;
-	v.g = (float)rand() / RAND_MAX;
-	v.b = (float)rand() / RAND_MAX;
+	v.var[0] = (float)rand() / RAND_MAX;
+	v.var[1] = (float)rand() / RAND_MAX;
+	v.var[2] = (float)rand() / RAND_MAX;
 
 	return v;
 }
@@ -105,21 +109,21 @@ int main(int argc, char *argv[])
 
 	v0.x = 320;
 	v0.y = 100;
-	v0.r = 1.0;
-	v0.g = 0.0;
-	v0.b = 0.0;
+	v0.var[0] = 1.0;
+	v0.var[1] = 0.0;
+	v0.var[2] = 0.0;
 
 	v2.x = 180;
 	v2.y = 200;
-	v2.r = 0.0;
-	v2.g = 1.0;
-	v2.b = 0.0;
+	v2.var[0] = 0.0;
+	v2.var[1] = 1.0;
+	v2.var[2] = 0.0;
 
 	v1.x = 480;
 	v1.y = 300;
-	v1.r = 0.0;
-	v1.g = 0.0;
-	v1.b = 1.0;
+	v1.var[0] = 0.0;
+	v1.var[1] = 0.0;
+	v1.var[2] = 1.0;
 
 	r.drawTriangle<PixelShader>(v0, v1, v2);
 

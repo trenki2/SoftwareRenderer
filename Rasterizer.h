@@ -4,6 +4,7 @@
 #include <algorithm>
 
 const int BlockSize = 8;
+const int MaxVar = 32;
 
 struct Vertex {
     float x;
@@ -11,9 +12,7 @@ struct Vertex {
 	float z;
 	float w;
 
-    float r;
-    float g;
-    float b;
+    float var[MaxVar];
 };
 
 struct EdgeEquation {
@@ -132,11 +131,11 @@ struct TriangleEquations {
 	EdgeEquation e1;
 	EdgeEquation e2;
 
-	ParameterEquation r;
-	ParameterEquation g;
-	ParameterEquation b;
+	ParameterEquation z;
+	ParameterEquation w;
+	ParameterEquation var[MaxVar];
 
-	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2)
+	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2, int varCount)
 	{
 		e0.init(v0, v1);
 		e1.init(v1, v2);
@@ -147,43 +146,47 @@ struct TriangleEquations {
 		// Cull backfacing triangles.
 		if (area < 0)
 			return;
-
-		r.init(v0.r, v1.r, v2.r, e0, e1, e2, area);
-		g.init(v0.g, v1.g, v2.g, e0, e1, e2, area);
-		b.init(v0.b, v1.b, v2.b, e0, e1, e2, area);
+		
+		z.init(v0.z, v1.z, v2.z, e0, e1, e2, area);
+		w.init(v0.w, v1.w, v2.w, e0, e1, e2, area);
+		for (int i = 0; i < varCount; ++i)
+			var[i].init(v0.var[i], v1.var[i], v2.var[i], e0, e1, e2, area);
 	}
 };
 
 struct PixelData {
 	float x;
 	float y;
+	float z;
+	float w;
 
-	float r;
-	float g;
-	float b;
+	float var[MaxVar];
 
 	/// Initialize pixel data for the given pixel coordinates.
-	void init(const TriangleEquations &eqn, float x, float y)
+	void init(const TriangleEquations &eqn, float x, float y, int varCount, bool interpolateZ, bool interpolateW)
 	{
-		r = eqn.r.evaluate(x, y);
-		g = eqn.g.evaluate(x, y);
-		b = eqn.b.evaluate(x, y);
+		if (interpolateZ) z = eqn.z.evaluate(x, y);
+		if (interpolateW) w = eqn.w.evaluate(x, y);
+		for (int i = 0; i < varCount; ++i)
+			var[i] = eqn.var[i].evaluate(x, y);
 	}
 
 	/// Step all the pixel data in the x direction.
-	void stepX(const TriangleEquations &eqn)
+	void stepX(const TriangleEquations &eqn, int varCount, bool interpolateZ, bool interpolateW)
 	{
-		r = eqn.r.stepX(r);
-		g = eqn.g.stepX(g);
-		b = eqn.b.stepX(b);
+		if (interpolateZ) z = eqn.z.stepX(z);
+		if (interpolateW) w = eqn.w.stepX(w);
+		for (int i = 0; i < varCount; ++i)
+			var[i] = eqn.var[i].stepX(var[i]);
 	}
 
 	/// Step all the pixel data in the y direction.
-	void stepY(const TriangleEquations &eqn)
+	void stepY(const TriangleEquations &eqn, int varCount, bool interpolateZ, bool interpolateW)
 	{
-		r = eqn.r.stepY(r);
-		g = eqn.g.stepY(g);
-		b = eqn.b.stepY(b);
+		if (interpolateZ) z = eqn.z.stepY(z);
+		if (interpolateW) w = eqn.w.stepY(w);
+		for (int i = 0; i < varCount; ++i)
+			var[i] = eqn.var[i].stepY(var[i]);
 	}
 };
 
@@ -242,11 +245,20 @@ struct EdgeData {
 template <class Derived>
 class PixelShaderBase {
 public:
+	/// Tells the rasterizer to interpolate the z component.
+	static const int InterpolateZ = false;
+
+	/// Tells the rasterizer to interpolate the w component.
+	static const int InterpolateW = false;
+
+	/// Tells the rasterizer how many vars to interpolate;
+	static const int VarCount = 0;
+
 	template <bool TestEdges>
 	static void rasterizeBlock(const TriangleEquations &eqn, float x, float y)
 	{
 		PixelData po;
-		po.init(eqn, x, y);
+		po.init(eqn, x, y, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
 
 		EdgeData eo;
 		if (TestEdges)
@@ -269,15 +281,21 @@ public:
 					Derived::drawPixel(pi);
 				}
 
-				pi.stepX(eqn);
+				pi.stepX(eqn, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
 				if (TestEdges)
 					ei.stepX(eqn);
 			}
 
-			po.stepY(eqn);
+			po.stepY(eqn, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
 			if (TestEdges)
 				eo.stepY(eqn);
 		}
+	}
+
+	/// This is called per pixel.
+	static void drawPixel(const PixelData &p)
+	{
+
 	}
 };
 
@@ -301,7 +319,7 @@ public:
     void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2)
     {
 		// Compute triangle equations.
-		TriangleEquations eqn(v0, v1, v2);
+		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
 
 		// Check if triangle is backfacing.
 		if (eqn.area < 0)
