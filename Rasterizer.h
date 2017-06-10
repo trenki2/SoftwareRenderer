@@ -410,8 +410,8 @@ private:
 
 		p.x = v.x;
 		p.y = v.y;
-		p.z = v.z;
-		p.w = v.w;
+		if (PixelShader::InterpolateZ) p.z = v.z;
+		if (PixelShader::InterpolateW) p.w = v.w;
 		for (int i = 0; i < PixelShader::VarCount; ++i)
 			p.var[i] = v.var[i];
 
