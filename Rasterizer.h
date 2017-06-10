@@ -299,6 +299,8 @@ public:
 	}
 };
 
+class DummyShader : public PixelShaderBase<DummyShader> {};
+
 class Rasterizer {
 private:
     int m_minX;
@@ -306,9 +308,16 @@ private:
     int m_minY;
     int m_maxY;
 
-	void (Rasterizer::*m_triangleFunc)(const Vertex& v0, const Vertex &v1, const Vertex &v2);
+	void (Rasterizer::*m_triangleFunc)(const Vertex& v0, const Vertex &v1, const Vertex &v2) const;
+	void (Rasterizer::*m_pointFunc)(const Vertex& v) const;
 
 public:
+	Rasterizer()
+	{
+		setScissorRect(0, 0, 0, 0);
+		setPixelShader<DummyShader>();
+	}
+
     void setScissorRect(int minX, int minY, int maxX, int maxY)
     {
         m_minX = minX;
@@ -316,21 +325,27 @@ public:
         m_maxX = maxX;
         m_maxY = maxY;
     }
-
+	
 	template <class PixelShader>
 	void setPixelShader()
 	{
 		m_triangleFunc = &Rasterizer::drawTriangleTemplate<PixelShader>;
+		m_pointFunc = &Rasterizer::drawPointTemplate<PixelShader>;
 	}
 
-	void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2)
+	void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		(this->*m_triangleFunc)(v0, v1, v2);
 	}
 
+	void drawPoint(const Vertex &v) const
+	{
+		(this->*m_pointFunc)(v);
+	}
+
 private:
 	template <class PixelShader>
-    void drawTriangleTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2)
+    void drawTriangleTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
     {
 		// Compute triangle equations.
 		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
@@ -383,4 +398,23 @@ private:
 				PixelShader::template rasterizeBlock<true>(eqn, x, y);
         }
     }
+
+	template <class PixelShader>
+	void drawPointTemplate(const Vertex &v) const
+	{
+		// Check scissor rect
+		if (v.x < m_minX || v.x > m_maxX || v.y < m_minY || v.y > m_maxY)
+			return;
+
+		PixelData p;
+
+		p.x = v.x;
+		p.y = v.y;
+		p.z = v.z;
+		p.w = v.w;
+		for (int i = 0; i < PixelShader::VarCount; ++i)
+			p.var[i] = v.var[i];
+
+		PixelShader::drawPixel(p);
+	}
 };
