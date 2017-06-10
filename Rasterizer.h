@@ -306,6 +306,8 @@ private:
     int m_minY;
     int m_maxY;
 
+	void (Rasterizer::*m_triangleFunc)(const Vertex& v0, const Vertex &v1, const Vertex &v2);
+
 public:
     void setScissorRect(int minX, int minY, int maxX, int maxY)
     {
@@ -316,7 +318,19 @@ public:
     }
 
 	template <class PixelShader>
-    void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2)
+	void setPixelShader()
+	{
+		m_triangleFunc = &Rasterizer::drawTriangleTemplate<PixelShader>;
+	}
+
+	void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2)
+	{
+		(this->*m_triangleFunc)(v0, v1, v2);
+	}
+
+private:
+	template <class PixelShader>
+    void drawTriangleTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2)
     {
 		// Compute triangle equations.
 		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);

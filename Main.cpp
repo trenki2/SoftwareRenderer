@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
 
     Rasterizer r;
     r.setScissorRect(0, 0, 640, 480);
+	r.setPixelShader<PixelShader>();
 	PixelShader::surface = screen;
 
 	Uint32 start = SDL_GetTicks();
@@ -102,7 +103,7 @@ int main(int argc, char *argv[])
 		Vertex v1 = randomVertex();
 		Vertex v2 = randomVertex();
 
-		r.drawTriangle<PixelShader>(v0, v1, v2);
+		r.drawTriangle(v0, v1, v2);
 	}
 
 	Vertex v0, v1, v2;
@@ -125,7 +126,7 @@ int main(int argc, char *argv[])
 	v1.var[1] = 0.0;
 	v1.var[2] = 1.0;
 
-	r.drawTriangle<PixelShader>(v0, v1, v2);
+	r.drawTriangle(v0, v1, v2);
 
 	Uint32 end = SDL_GetTicks();
 	printf("%i\n", end - start);
