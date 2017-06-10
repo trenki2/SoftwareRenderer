@@ -43,7 +43,7 @@ struct EdgeEquation {
     /// Test for a given evaluated value.
     bool test(float v) const
     {
-        return (v > 0 || v == 0 && tie);
+        return (v > 0 || (v == 0 && tie));
     }
 
 	/// Step the equation value v to the x direction
@@ -376,14 +376,13 @@ public:
 		minY = minY & ~(BlockSize - 1);
 		maxY = maxY & ~(BlockSize - 1);
 
+		float s = (float)BlockSize - 1;
+
         // Add 0.5 to sample at pixel centers.
-		// Add 0.5 to sample at pixel centers.
 		for (float x = minX + 0.5f, xm = maxX + 0.5f; x <= xm; x += BlockSize)
 		for (float y = minY + 0.5f, ym = maxY + 0.5f; y <= ym; y += BlockSize)
         {
-			// Test if block is inside or outside triangle or touches it
-			float s = (float)BlockSize - 1;
-
+			// Test if block is inside or outside triangle or touches it.
 			EdgeData e00; e00.init(eqn, x, y);
 			EdgeData e01 = e00; e01.stepY(eqn, s);
 			EdgeData e10 = e00; e10.stepX(eqn, s);
@@ -424,7 +423,7 @@ public:
 
 			for (float xx = x; xx < x + BlockSize; xx += 1.0f)
 			{
-				if (!TestEdges || (eqn.e0.test(ei.ev0) && eqn.e1.test(ei.ev1) && eqn.e2.test(ei.ev2)))
+				if (!TestEdges || ei.test(eqn))
 				{
 					int rint = (int)(pi.r * 255);
 					int gint = (int)(pi.g * 255);
