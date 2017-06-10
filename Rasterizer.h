@@ -3,6 +3,8 @@
 #include "SDL.h"
 #include <algorithm>
 
+const int BlockSize = 8;
+
 struct Vertex {
     float x;
     float y;
@@ -153,6 +155,9 @@ struct TriangleEquations {
 };
 
 struct PixelData {
+	float x;
+	float y;
+
 	float r;
 	float g;
 	float b;
@@ -234,23 +239,56 @@ struct EdgeData {
 	}
 };
 
+template <class Derived>
+class PixelShaderBase {
+public:
+	template <bool TestEdges>
+	static void rasterizeBlock(const TriangleEquations &eqn, float x, float y)
+	{
+		PixelData po;
+		po.init(eqn, x, y);
+
+		EdgeData eo;
+		if (TestEdges)
+			eo.init(eqn, x, y);
+
+		for (float yy = y; yy < y + BlockSize; yy += 1.0f)
+		{
+			PixelData pi = po;
+
+			EdgeData ei;
+			if (TestEdges)
+				ei = eo;
+
+			for (float xx = x; xx < x + BlockSize; xx += 1.0f)
+			{
+				if (!TestEdges || ei.test(eqn))
+				{
+					pi.x = xx;
+					pi.y = yy;
+					Derived::drawPixel(pi);
+				}
+
+				pi.stepX(eqn);
+				if (TestEdges)
+					ei.stepX(eqn);
+			}
+
+			po.stepY(eqn);
+			if (TestEdges)
+				eo.stepY(eqn);
+		}
+	}
+};
+
 class Rasterizer {
 private:
-	const int BlockSize = 8;
-
-    SDL_Surface *m_surface;
-
     int m_minX;
     int m_maxX;
     int m_minY;
     int m_maxY;
 
 public:
-    void setSurface(SDL_Surface *surface)
-    {
-        m_surface = surface;
-    }
-
     void setScissorRect(int minX, int minY, int maxX, int maxY)
     {
         m_minX = minX;
@@ -259,96 +297,7 @@ public:
         m_maxY = maxY;
     }
 
-    /*
-    * Set the pixel at (x, y) to the given value
-    * NOTE: The surface must be locked before calling this!
-    */
-    void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
-    {
-        int bpp = surface->format->BytesPerPixel;
-
-        /* Here p is the address to the pixel we want to set */
-        Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-
-        switch(bpp) {
-        case 1:
-            *p = pixel;
-            break;
-
-        case 2:
-            *(Uint16 *)p = pixel;
-            break;
-
-        case 3:
-            if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-                p[0] = (pixel >> 16) & 0xff;
-                p[1] = (pixel >> 8) & 0xff;
-                p[2] = pixel & 0xff;
-            } else {
-                p[0] = pixel & 0xff;
-                p[1] = (pixel >> 8) & 0xff;
-                p[2] = (pixel >> 16) & 0xff;
-            }
-            break;
-
-        case 4:
-            *(Uint32 *)p = pixel;
-            break;
-        }
-    }
-
-	void drawTriangleSimple(const Vertex& v0, const Vertex &v1, const Vertex &v2)
-	{
-		// Compute edge equations.
-		EdgeEquation e0;
-		EdgeEquation e1;
-		EdgeEquation e2;
-
-		e0.init(v0, v1);
-		e1.init(v1, v2);
-		e2.init(v2, v0);
-
-		float area = 0.5f * (e0.c + e1.c + e2.c);
-
-		// Check if triangle is backfacing.
-		if (area < 0)
-			return;
-
-		ParameterEquation r;
-		ParameterEquation g;
-		ParameterEquation b;
-
-		r.init(v0.r, v1.r, v2.r, e0, e1, e2, area);
-		g.init(v0.g, v1.g, v2.g, e0, e1, e2, area);
-		b.init(v0.b, v1.b, v2.b, e0, e1, e2, area);
-
-		// Compute triangle bounding box.
-		int minX = (int)std::min(std::min(v0.x, v1.x), v2.x);
-		int maxX = (int)std::max(std::max(v0.x, v1.x), v2.x);
-		int minY = (int)std::min(std::min(v0.y, v1.y), v2.y);
-		int maxY = (int)std::max(std::max(v0.y, v1.y), v2.y);
-
-		// Clip to scissor rect.
-		minX = std::max(minX, m_minX);
-		maxX = std::min(maxX, m_maxX);
-		minY = std::max(minY, m_minY);
-		maxY = std::min(maxY, m_maxY);
-
-		// Add 0.5 to sample at pixel centers.
-		for (float x = minX + 0.5f, xm = maxX + 0.5f; x <= xm; x += 1.0f)
-			for (float y = minY + 0.5f, ym = maxY + 0.5f; y <= ym; y += 1.0f)
-			{
-				if (e0.test(x, y) && e1.test(x, y) && e2.test(x, y))
-				{
-					int rint = (int)(r.evaluate(x, y) * 255);
-					int gint = (int)(g.evaluate(x, y) * 255);
-					int bint = (int)(b.evaluate(x, y) * 255);
-					Uint32 color = SDL_MapRGB(m_surface->format, rint, gint, bint);
-					putpixel(m_surface, (int)x, (int)y, color);
-				}
-			}
-	}
-
+	template <class PixelShader>
     void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2)
     {
 		// Compute triangle equations.
@@ -396,50 +345,10 @@ public:
 
 			if (result == 4)
 				// Fully Covered
-				rasterizeBlock<false>(eqn, x, y);
+				PixelShader::template rasterizeBlock<false>(eqn, x, y);
 			else
 				// Partially Covered
-				rasterizeBlock<true>(eqn, x, y);
+				PixelShader::template rasterizeBlock<true>(eqn, x, y);
         }
     }
-
-	template <bool TestEdges>
-	void rasterizeBlock(const TriangleEquations &eqn, float x, float y)
-	{
-		PixelData po;
-		po.init(eqn, x, y);
-
-		EdgeData eo;
-		if (TestEdges)
-			eo.init(eqn, x, y);
-
-		for (float yy = y; yy < y + BlockSize; yy += 1.0f)
-		{
-			PixelData pi = po;
-
-			EdgeData ei;
-			if (TestEdges)
-				ei = eo;
-
-			for (float xx = x; xx < x + BlockSize; xx += 1.0f)
-			{
-				if (!TestEdges || ei.test(eqn))
-				{
-					int rint = (int)(pi.r * 255);
-					int gint = (int)(pi.g * 255);
-					int bint = (int)(pi.b * 255);
-					Uint32 color = SDL_MapRGB(m_surface->format, rint, gint, bint);
-					putpixel(m_surface, (int)xx, (int)yy, color);
-				}
-
-				pi.stepX(eqn);
-				if (TestEdges)
-					ei.stepX(eqn);
-			}
-
-			po.stepY(eqn);
-			if (TestEdges)
-				eo.stepY(eqn);
-		}
-	}
 };
