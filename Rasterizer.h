@@ -46,25 +46,25 @@ struct EdgeEquation {
         return (v > 0 || v == 0 && tie);
     }
 
-	/// Step the equation value to the x direction
+	/// Step the equation value v to the x direction
 	float stepX(float v) const
 	{
 		return v + a;
 	}
 
-	/// Step the equation value to the x direction
+	/// Step the equation value v to the x direction
 	float stepX(float v, float stepSize) const
 	{
 		return v + a * stepSize;
 	}
 
-	/// Step the equation value to the y direction
+	/// Step the equation value v to the y direction
 	float stepY(float v) const
 	{
 		return v + b;
 	}
 
-	/// Step the equation value to the y direction
+	/// Step the equation value vto the y direction
 	float stepY(float v, float stepSize) const
 	{
 		return v + b * stepSize;
@@ -98,25 +98,25 @@ struct ParameterEquation {
         return a * x + b * y + c;
     }
 
-	/// Step parameter value in x direction.
+	/// Step parameter value v in x direction.
 	float stepX(float v) const
 	{
 		return v + a;
 	}
 
-	/// Step parameter value in x direction.
+	/// Step parameter value v in x direction.
 	float stepX(float v, float stepSize) const
 	{
 		return v + a * stepSize;
 	}
 
-	/// Step parameter value in y direction.
+	/// Step parameter value v in y direction.
 	float stepY(float v) const
 	{
 		return v + b;
 	}
 
-	/// Step parameter value in y direction.
+	/// Step parameter value v in y direction.
 	float stepY(float v, float stepSize) const
 	{
 		return v + b * stepSize;
@@ -149,6 +149,66 @@ struct TriangleEquations {
 		r.init(v0.r, v1.r, v2.r, e0, e1, e2, area);
 		g.init(v0.g, v1.g, v2.g, e0, e1, e2, area);
 		b.init(v0.b, v1.b, v2.b, e0, e1, e2, area);
+	}
+};
+
+struct PixelData {
+	float r;
+	float g;
+	float b;
+
+	/// Initialize pixel data for the given pixel coordinates.
+	void init(const TriangleEquations &eqn, float x, float y)
+	{
+		r = eqn.r.evaluate(x, y);
+		g = eqn.g.evaluate(x, y);
+		b = eqn.b.evaluate(x, y);
+	}
+
+	/// Step all the pixel data in the x direction.
+	void stepX(const TriangleEquations &eqn)
+	{
+		r = eqn.r.stepX(r);
+		g = eqn.g.stepX(g);
+		b = eqn.b.stepX(b);
+	}
+
+	/// Step all the pixel data in the y direction.
+	void stepY(const TriangleEquations &eqn)
+	{
+		r = eqn.r.stepY(r);
+		g = eqn.g.stepY(g);
+		b = eqn.b.stepY(b);
+	}
+};
+
+struct EdgeData {
+	float ev0;
+	float ev1;
+	float ev2;
+
+	/// Initialize the edge data values.
+	void init(const TriangleEquations &eqn, float x, float y)
+	{
+		ev0 = eqn.e0.evaluate(x, y);
+		ev1 = eqn.e1.evaluate(x, y);
+		ev2 = eqn.e2.evaluate(x, y);
+	}
+
+	/// Step the edge values in the x direction.
+	void stepX(const TriangleEquations &eqn)
+	{
+		ev0 = eqn.e0.stepX(ev0);
+		ev1 = eqn.e1.stepX(ev1);
+		ev2 = eqn.e2.stepX(ev2);
+	}
+
+	/// Step the edge values in the y direction.
+	void stepY(const TriangleEquations &eqn)
+	{
+		ev0 = eqn.e0.stepY(ev0);
+		ev1 = eqn.e1.stepY(ev1);
+		ev2 = eqn.e2.stepY(ev2);
 	}
 };
 
@@ -339,55 +399,40 @@ public:
 	template <bool TestEdges>
 	void rasterizeBlock(const TriangleEquations &eqn, float x, float y)
 	{
-		float ev0o;
-		float ev1o;
-		float ev2o;
+		PixelData po;
+		po.init(eqn, x, y);
 
+		EdgeData eo;
 		if (TestEdges)
-		{
-			ev0o = eqn.e0.evaluate(x, y);
-			ev1o = eqn.e1.evaluate(x, y);
-			ev2o = eqn.e2.evaluate(x, y);
-		}
+			eo.init(eqn, x, y);
 
 		for (float yy = y; yy < y + BlockSize; yy += 1.0f)
 		{
-			float ev0i;
-			float ev1i;
-			float ev2i;
+			PixelData pi = po;
 
+			EdgeData ei;
 			if (TestEdges)
-			{
-				ev0i = ev0o;
-				ev1i = ev1o;
-				ev2i = ev2o;
-			}
+				ei = eo;
 
 			for (float xx = x; xx < x + BlockSize; xx += 1.0f)
 			{
-				if (!TestEdges || (eqn.e0.test(ev0i) && eqn.e1.test(ev1i) && eqn.e2.test(ev2i)))
+				if (!TestEdges || (eqn.e0.test(ei.ev0) && eqn.e1.test(ei.ev1) && eqn.e2.test(ei.ev2)))
 				{
-					int rint = (int)(eqn.r.evaluate(xx, yy) * 255);
-					int gint = (int)(eqn.g.evaluate(xx, yy) * 255);
-					int bint = (int)(eqn.b.evaluate(xx, yy) * 255);
+					int rint = (int)(pi.r * 255);
+					int gint = (int)(pi.g * 255);
+					int bint = (int)(pi.b * 255);
 					Uint32 color = SDL_MapRGB(m_surface->format, rint, gint, bint);
 					putpixel(m_surface, (int)xx, (int)yy, color);
 				}
 
+				pi.stepX(eqn);
 				if (TestEdges)
-				{
-					ev0i = eqn.e0.stepX(ev0i);
-					ev1i = eqn.e1.stepX(ev1i);
-					ev2i = eqn.e2.stepX(ev2i);
-				}
+					ei.stepX(eqn);
 			}
 
+			po.stepY(eqn);
 			if (TestEdges)
-			{
-				ev0o = eqn.e0.stepY(ev0o);
-				ev1o = eqn.e1.stepY(ev1o);
-				ev2o = eqn.e2.stepY(ev2o);
-			}
+				eo.stepY(eqn);
 		}
 	}
 };
