@@ -458,6 +458,8 @@ private:
 		float s = (float)BlockSize - 1;
 
         // Add 0.5 to sample at pixel centers.
+		
+		#pragma omp parallel for collapse(2)
 		for (float x = minX + 0.5f, xm = maxX + 0.5f; x <= xm; x += BlockSize)
 		for (float y = minY + 0.5f, ym = maxY + 0.5f; y <= ym; y += BlockSize)
         {

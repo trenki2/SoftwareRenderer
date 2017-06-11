@@ -6,9 +6,15 @@ set(SOURCE_FILES
 	Main.cpp 
 	Rasterizer.h)
 
-if(EXISTS "${CMAKE_BINARY_DIR}/CMakeTools/CMakeToolsHelpers.cmake")
+if (EXISTS "${CMAKE_BINARY_DIR}/CMakeTools/CMakeToolsHelpers.cmake")
 	include(${CMAKE_BINARY_DIR}/CMakeTools/CMakeToolsHelpers.cmake)
-endif()
+endif ()
+
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif ()
 
 find_package(SDL2 REQUIRED)
 include_directories(SoftwareRenderer ${SDL2_INCLUDE_DIRS})
