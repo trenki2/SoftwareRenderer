@@ -52,8 +52,11 @@ public:
 		int rint = (int)(p.var[0] * 255);
 		int gint = (int)(p.var[1] * 255);
 		int bint = (int)(p.var[2] * 255);
-		Uint32 color = SDL_MapRGB(surface->format, rint, gint, bint);
-		putpixel(surface, (int)p.x, (int)p.y, color);
+		
+		Uint32 color = rint << 16 | gint << 8 | bint;
+
+		Uint32 *buffer = (Uint32*)((Uint8 *)surface->pixels + (int)p.y * surface->pitch + (int)p.x * 4);
+		*buffer = color;
 	}
 };
 
@@ -96,18 +99,8 @@ int main(int argc, char *argv[])
 	PixelShader::surface = screen;
 
 	Uint32 start = SDL_GetTicks();
-
 	
-	for (int i = 0; i < 100000; ++i)
-	{
-		Vertex v0 = randomVertex();
-		Vertex v1 = randomVertex();
-		Vertex v2 = randomVertex();
-
-		r.drawTriangle(v0, v1, v2);
-	}
-
-	Vertex v0, v1, v2;
+Vertex v0, v1, v2;
 
 	v0.x = 320;
 	v0.y = 100;
@@ -126,6 +119,17 @@ int main(int argc, char *argv[])
 	v1.var[0] = 0.0;
 	v1.var[1] = 0.0;
 	v1.var[2] = 1.0;
+
+	for (int i = 0; i < 100000; ++i)
+	{
+		Vertex v0 = randomVertex();
+		Vertex v1 = randomVertex();
+		Vertex v2 = randomVertex();
+
+		r.drawTriangle(v0, v1, v2);
+	}
+
+	
 
 	r.drawTriangle(v0, v1, v2);
 	
