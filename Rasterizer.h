@@ -162,6 +162,8 @@ struct PixelData {
 
 	float var[MaxVar];
 
+	PixelData() {}
+
 	/// Initialize pixel data for the given pixel coordinates.
 	void init(const TriangleEquations &eqn, float x, float y, int varCount, bool interpolateZ, bool interpolateW)
 	{
@@ -309,6 +311,7 @@ private:
     int m_maxY;
 
 	void (Rasterizer::*m_triangleFunc)(const Vertex& v0, const Vertex &v1, const Vertex &v2) const;
+	void (Rasterizer::*m_lineFunc)(const Vertex& v0, const Vertex& v1) const;
 	void (Rasterizer::*m_pointFunc)(const Vertex& v) const;
 
 public:
@@ -330,12 +333,8 @@ public:
 	void setPixelShader()
 	{
 		m_triangleFunc = &Rasterizer::drawTriangleTemplate<PixelShader>;
+		m_lineFunc = &Rasterizer::drawLineTemplate<PixelShader>;
 		m_pointFunc = &Rasterizer::drawPointTemplate<PixelShader>;
-	}
-
-	void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
-	{
-		(this->*m_triangleFunc)(v0, v1, v2);
 	}
 
 	void drawPoint(const Vertex &v) const
@@ -343,7 +342,91 @@ public:
 		(this->*m_pointFunc)(v);
 	}
 
+	void drawLine(const Vertex &v0, const Vertex &v1)
+	{
+		(this->*m_lineFunc)(v0, v1);
+	}
+	
+	void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	{
+		(this->*m_triangleFunc)(v0, v1, v2);
+	}
+
 private:
+	bool scissorTest(float x, float y) const
+	{
+		return (x >= m_minX && x < m_maxX && y >= m_minY && y < m_maxY);
+	}
+
+	template <class PixelShader>
+	void drawPointTemplate(const Vertex &v) const
+	{
+		// Check scissor rect
+		if (!scissorTest(v.x, v.y))
+			return;
+
+		PixelData p = pixelDataFromVertex<PixelShader>(v);
+		PixelShader::drawPixel(p);
+	}
+
+	template<class PixelShader>
+	PixelData pixelDataFromVertex(const Vertex & v) const
+	{
+		PixelData p;
+		p.x = v.x;
+		p.y = v.y;
+		if (PixelShader::InterpolateZ) p.z = v.z;
+		if (PixelShader::InterpolateW) p.w = v.w;
+		for (int i = 0; i < PixelShader::VarCount; ++i)
+			p.var[i] = v.var[i];
+		return p;
+	}
+	
+	template <class PixelShader>
+	void drawLineTemplate(const Vertex &v0, const Vertex &v1) const
+	{
+		int adx = std::abs((int)v1.x - (int)v0.x);
+		int ady = std::abs((int)v1.y - (int)v0.y);
+		int steps = std::max(adx, ady);
+
+		Vertex step = computeVertexStep<PixelShader>(v0, v1, steps);
+
+		Vertex v = v0;
+		while (steps-- > 0)
+		{
+			PixelData p = pixelDataFromVertex<PixelShader>(v);
+
+			if (scissorTest(v.x, v.y))
+				PixelShader::drawPixel(p);
+			
+			stepVertex<PixelShader>(v, step);
+		}
+	}
+
+	template<class PixelShader>
+	void stepVertex(Vertex &v, Vertex &step) const
+	{
+		v.x += step.x;
+		v.y += step.y;
+		if (PixelShader::InterpolateZ) v.z += step.z;
+		if (PixelShader::InterpolateW) v.w += step.w;
+		for (int i = 0; i < PixelShader::VarCount; ++i)
+			v.var[i] += step.var[i];
+	}
+
+	template<class PixelShader>
+	Vertex computeVertexStep(const Vertex & v0, const Vertex & v1, int adx) const
+	{
+		Vertex step;
+		step.x = (v1.x - v0.x) / adx;
+		step.y = (v1.y - v0.y) / adx;
+		if (PixelShader::InterpolateZ) step.z = (v1.z - v0.z) / adx;
+		if (PixelShader::InterpolateW) step.w = (v1.w - v0.w) / adx;
+		for (int i = 0; i < PixelShader::VarCount; ++i)
+			step.var[i] = (v1.var[i] - v0.var[i]) / adx;
+		return step;
+	}
+
 	template <class PixelShader>
     void drawTriangleTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
     {
@@ -398,23 +481,4 @@ private:
 				PixelShader::template rasterizeBlock<true>(eqn, x, y);
         }
     }
-
-	template <class PixelShader>
-	void drawPointTemplate(const Vertex &v) const
-	{
-		// Check scissor rect
-		if (v.x < m_minX || v.x > m_maxX || v.y < m_minY || v.y > m_maxY)
-			return;
-
-		PixelData p;
-
-		p.x = v.x;
-		p.y = v.y;
-		if (PixelShader::InterpolateZ) p.z = v.z;
-		if (PixelShader::InterpolateW) p.w = v.w;
-		for (int i = 0; i < PixelShader::VarCount; ++i)
-			p.var[i] = v.var[i];
-
-		PixelShader::drawPixel(p);
-	}
 };

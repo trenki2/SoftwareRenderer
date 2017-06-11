@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
 
 	Uint32 start = SDL_GetTicks();
 
+	
 	for (int i = 0; i < 10000; ++i)
 	{
 		Vertex v0 = randomVertex();
@@ -127,7 +128,24 @@ int main(int argc, char *argv[])
 	v1.var[2] = 1.0;
 
 	r.drawTriangle(v0, v1, v2);
+	
 
+	/*Vertex v0, v1;
+
+	v0.x = 150;
+	v0.y = 100;
+	v0.var[0] = 1.0;
+	v0.var[1] = 0.0;
+	v0.var[2] = 0.0;
+
+	v1.x = 200;
+	v1.y = 300;
+	v1.var[0] = 0.0;
+	v1.var[1] = 0.0;
+	v1.var[2] = 1.0;
+
+	r.drawLine(v0, v1);
+	*/
 	Uint32 end = SDL_GetTicks();
 	printf("%i\n", end - start);
 
