@@ -463,8 +463,8 @@ private:
 		#pragma omp parallel for
 		for (int i = 0; i < stepsX * stepsY; ++i)
 		{
-			int sx = i / stepsY;
-			int sy = i % stepsY;
+			int sx = i % stepsX;
+			int sy = i / stepsX;
 
 			// Add 0.5 to sample at pixel centers.
 			float x = minX + sx * BlockSize + 0.5f;
