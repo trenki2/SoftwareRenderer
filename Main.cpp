@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 	Uint32 start = SDL_GetTicks();
 
 	
-	for (int i = 0; i < 10000; ++i)
+	for (int i = 0; i < 100000; ++i)
 	{
 		Vertex v0 = randomVertex();
 		Vertex v1 = randomVertex();

@@ -457,14 +457,18 @@ private:
 
 		float s = (float)BlockSize - 1;
 
-        // Add 0.5 to sample at pixel centers.
-		
-		#pragma omp parallel for collapse(2)
-		for (int xint = minX; xint <= maxX; xint += BlockSize)
-		for (int yint = minY; yint <= maxY; yint += BlockSize)
-        {
-			float x = xint + 0.5f;
-			float y = yint + 0.5f;
+		int stepsX = (maxX - minX) / BlockSize + 1;
+		int stepsY = (maxY - minY) / BlockSize + 1;
+
+		#pragma omp parallel for
+		for (int i = 0; i < stepsX * stepsY; ++i)
+		{
+			int sx = i / stepsY;
+			int sy = i % stepsY;
+
+			// Add 0.5 to sample at pixel centers.
+			float x = minX + sx * BlockSize + 0.5f;
+			float y = minY + sy * BlockSize + 0.5f;
 
 			// Test if block is inside or outside triangle or touches it.
 			EdgeData e00; e00.init(eqn, x, y);
@@ -484,6 +488,6 @@ private:
 			else
 				// Partially Covered
 				PixelShader::template rasterizeBlock<true>(eqn, x, y);
-        }
+		}
     }
 };
