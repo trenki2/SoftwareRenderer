@@ -155,8 +155,9 @@ struct TriangleEquations {
 };
 
 struct PixelData {
-	float x;
-	float y;
+	int x;
+	int y;
+
 	float z;
 	float w;
 
@@ -257,24 +258,27 @@ public:
 	static const int VarCount = 0;
 
 	template <bool TestEdges>
-	static void rasterizeBlock(const TriangleEquations &eqn, float x, float y)
+	static void rasterizeBlock(const TriangleEquations &eqn, int x, int y)
 	{
+		float xf = x + 0.5f;
+		float yf = y + 0.5f;
+
 		PixelData po;
-		po.init(eqn, x, y, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
+		po.init(eqn, xf, yf, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
 
 		EdgeData eo;
 		if (TestEdges)
-			eo.init(eqn, x, y);
+			eo.init(eqn, xf, yf);
 
-		for (float yy = y; yy < y + BlockSize; yy += 1.0f)
+		for (int yy = y; yy < y + BlockSize; yy++)
 		{
-			PixelData pi = po;
+			PixelData pi = copyPixelData(po);
 
 			EdgeData ei;
 			if (TestEdges)
 				ei = eo;
 
-			for (float xx = x; xx < x + BlockSize; xx += 1.0f)
+			for (int xx = x; xx < x + BlockSize; xx++)
 			{
 				if (!TestEdges || ei.test(eqn))
 				{
@@ -298,6 +302,17 @@ public:
 	static void drawPixel(const PixelData &p)
 	{
 
+	}
+
+protected:
+	static PixelData copyPixelData(PixelData &po)
+	{
+		PixelData pi;
+		if (Derived::InterpolateZ) pi.z = po.z;
+		if (Derived::InterpolateW) pi.w = po.w;
+		for (int i = 0; i < Derived::VarCount; ++i)
+			pi.var[i] = po.var[i];
+		return pi;
 	}
 };
 
@@ -467,11 +482,14 @@ private:
 			int sy = i / stepsX;
 
 			// Add 0.5 to sample at pixel centers.
-			float x = minX + sx * BlockSize + 0.5f;
-			float y = minY + sy * BlockSize + 0.5f;
+			int x = minX + sx * BlockSize;
+			int y = minY + sy * BlockSize;
+
+			float xf = x + 0.5f;
+			float yf = y + 0.5f;
 
 			// Test if block is inside or outside triangle or touches it.
-			EdgeData e00; e00.init(eqn, x, y);
+			EdgeData e00; e00.init(eqn, xf, yf);
 			EdgeData e01 = e00; e01.stepY(eqn, s);
 			EdgeData e10 = e00; e10.stepX(eqn, s);
 			EdgeData e11 = e01; e11.stepX(eqn, s);
