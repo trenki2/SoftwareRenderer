@@ -460,9 +460,12 @@ private:
         // Add 0.5 to sample at pixel centers.
 		
 		#pragma omp parallel for collapse(2)
-		for (float x = minX + 0.5f, xm = maxX + 0.5f; x <= xm; x += BlockSize)
-		for (float y = minY + 0.5f, ym = maxY + 0.5f; y <= ym; y += BlockSize)
+		for (int xint = minX; xint <= maxX; xint += BlockSize)
+		for (int yint = minY; yint <= maxY; yint += BlockSize)
         {
+			float x = xint + 0.5f;
+			float y = yint + 0.5f;
+
 			// Test if block is inside or outside triangle or touches it.
 			EdgeData e00; e00.init(eqn, x, y);
 			EdgeData e01 = e00; e01.stepY(eqn, s);
