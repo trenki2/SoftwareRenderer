@@ -144,7 +144,7 @@ struct TriangleEquations {
 		area = 0.5f * (e0.c + e1.c + e2.c);
 
 		// Cull backfacing triangles.
-		if (area < 0)
+		if (area <= 0)
 			return;
 		
 		z.init(v0.z, v1.z, v2.z, e0, e1, e2, area);
@@ -449,7 +449,7 @@ private:
 		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
 
 		// Check if triangle is backfacing.
-		if (eqn.area < 0)
+		if (eqn.area <= 0)
 			return;
 
         // Compute triangle bounding box.
