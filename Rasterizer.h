@@ -1,6 +1,5 @@
 #pragma once
 
-#include "SDL.h"
 #include <algorithm>
 
 const int BlockSize = 8;
