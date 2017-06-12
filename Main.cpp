@@ -93,8 +93,8 @@ int main(int argc, char *argv[])
 
 	srand(1234);
 
-    Rasterizer r;
-    r.setScissorRect(0, 0, 640, 480);
+	Rasterizer r;
+	r.setScissorRect(0, 0, 640, 480);
 	r.setPixelShader<PixelShader>();
 	PixelShader::surface = screen;
 
@@ -150,7 +150,7 @@ Vertex v0, v1, v2;
 	Uint32 end = SDL_GetTicks();
 	printf("%i\n", end - start);
 
-    SDL_UpdateWindowSurface(window);
+	SDL_UpdateWindowSurface(window);
 
 	SDL_Delay(3000);
 
