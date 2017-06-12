@@ -7,45 +7,45 @@ const int BlockSize = 8;
 const int MaxVar = 32;
 
 struct Vertex {
-    float x;
-    float y;
+	float x;
+	float y;
 	float z;
 	float w;
 
-    float var[MaxVar];
+	float var[MaxVar];
 };
 
 struct EdgeEquation {
-    float a;
-    float b;
-    float c;
-    bool tie; 
+	float a;
+	float b;
+	float c;
+	bool tie; 
 
-    void init(const Vertex &v0, const Vertex &v1)
-    {
-        a = v0.y - v1.y;
-        b = v1.x - v0.x;
-        c = - (a * (v0.x + v1.x) + b * (v0.y + v1.y)) / 2;
-        tie = a != 0 ? a > 0 : b > 0;
-    }
+	void init(const Vertex &v0, const Vertex &v1)
+	{
+		a = v0.y - v1.y;
+		b = v1.x - v0.x;
+		c = - (a * (v0.x + v1.x) + b * (v0.y + v1.y)) / 2;
+		tie = a != 0 ? a > 0 : b > 0;
+	}
 
-    /// Evaluate the edge equation for the given point.
-    float evaluate(float x, float y) const
-    {
-        return a * x + b * y + c;
-    }
+	/// Evaluate the edge equation for the given point.
+	float evaluate(float x, float y) const
+	{
+		return a * x + b * y + c;
+	}
 
-    /// Test if the given point is inside the edge.
-    bool test(float x, float y) const
-    {
-        return test(evaluate(x, y));
-    }
+	/// Test if the given point is inside the edge.
+	bool test(float x, float y) const
+	{
+		return test(evaluate(x, y));
+	}
 
-    /// Test for a given evaluated value.
-    bool test(float v) const
-    {
-        return (v > 0 || (v == 0 && tie));
-    }
+	/// Test for a given evaluated value.
+	bool test(float v) const
+	{
+		return (v > 0 || (v == 0 && tie));
+	}
 
 	/// Step the equation value v to the x direction
 	float stepX(float v) const
@@ -73,31 +73,31 @@ struct EdgeEquation {
 };
 
 struct ParameterEquation {
-    float a;
-    float b;
-    float c;
+	float a;
+	float b;
+	float c;
 
-    void init(
-        float p0,
-        float p1, 
-        float p2, 
-        const EdgeEquation &e0, 
-        const EdgeEquation &e1, 
-        const EdgeEquation &e2, 
-        float area)
-    {
-        float factor = 1.0f / (2.0f * area);
+	void init(
+		float p0,
+		float p1, 
+		float p2, 
+		const EdgeEquation &e0, 
+		const EdgeEquation &e1, 
+		const EdgeEquation &e2, 
+		float area)
+	{
+		float factor = 1.0f / (2.0f * area);
 
-        a = factor * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
-        b = factor * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
-        c = factor * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
-    }
+		a = factor * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
+		b = factor * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
+		c = factor * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
+	}
 
-    /// Evaluate the parameter equation for the given point.
-    float evaluate(float x, float y) const
-    {
-        return a * x + b * y + c;
-    }
+	/// Evaluate the parameter equation for the given point.
+	float evaluate(float x, float y) const
+	{
+		return a * x + b * y + c;
+	}
 
 	/// Step parameter value v in x direction.
 	float stepX(float v) const
@@ -320,10 +320,10 @@ class DummyShader : public PixelShaderBase<DummyShader> {};
 
 class Rasterizer {
 private:
-    int m_minX;
-    int m_maxX;
-    int m_minY;
-    int m_maxY;
+	int m_minX;
+	int m_maxX;
+	int m_minY;
+	int m_maxY;
 
 	void (Rasterizer::*m_triangleFunc)(const Vertex& v0, const Vertex &v1, const Vertex &v2) const;
 	void (Rasterizer::*m_lineFunc)(const Vertex& v0, const Vertex& v1) const;
@@ -336,13 +336,13 @@ public:
 		setPixelShader<DummyShader>();
 	}
 
-    void setScissorRect(int minX, int minY, int maxX, int maxY)
-    {
-        m_minX = minX;
-        m_minY = minY;
-        m_maxX = maxX;
-        m_maxY = maxY;
-    }
+	void setScissorRect(int minX, int minY, int maxX, int maxY)
+	{
+		m_minX = minX;
+		m_minY = minY;
+		m_maxX = maxX;
+		m_maxY = maxY;
+	}
 	
 	template <class PixelShader>
 	void setPixelShader()
@@ -443,8 +443,8 @@ private:
 	}
 
 	template <class PixelShader>
-    void drawTriangleTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
-    {
+	void drawTriangleTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	{
 		// Compute triangle equations.
 		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
 
@@ -452,17 +452,17 @@ private:
 		if (eqn.area <= 0)
 			return;
 
-        // Compute triangle bounding box.
-        int minX = (int)std::min(std::min(v0.x, v1.x), v2.x);
-        int maxX = (int)std::max(std::max(v0.x, v1.x), v2.x);
-        int minY = (int)std::min(std::min(v0.y, v1.y), v2.y);
-        int maxY = (int)std::max(std::max(v0.y, v1.y), v2.y);
+		// Compute triangle bounding box.
+		int minX = (int)std::min(std::min(v0.x, v1.x), v2.x);
+		int maxX = (int)std::max(std::max(v0.x, v1.x), v2.x);
+		int minY = (int)std::min(std::min(v0.y, v1.y), v2.y);
+		int maxY = (int)std::max(std::max(v0.y, v1.y), v2.y);
 
-        // Clip to scissor rect.
-        minX = std::max(minX, m_minX);
-        maxX = std::min(maxX, m_maxX);
-        minY = std::max(minY, m_minY);
-        maxY = std::min(maxY, m_maxY);
+		// Clip to scissor rect.
+		minX = std::max(minX, m_minX);
+		maxX = std::min(maxX, m_maxX);
+		minY = std::max(minY, m_minY);
+		maxY = std::min(maxY, m_maxY);
 
 		// Round to block grid.
 		minX = minX & ~(BlockSize - 1);
@@ -507,5 +507,5 @@ private:
 				// Partially Covered
 				PixelShader::template rasterizeBlock<true>(eqn, x, y);
 		}
-    }
+	}
 };
