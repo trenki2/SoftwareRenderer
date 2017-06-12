@@ -257,7 +257,7 @@ public:
 	static const int VarCount = 0;
 
 	template <bool TestEdges>
-	static void rasterizeBlock(const TriangleEquations &eqn, int x, int y)
+	static void drawBlock(const TriangleEquations &eqn, int x, int y)
 	{
 		float xf = x + 0.5f;
 		float yf = y + 0.5f;
@@ -501,10 +501,10 @@ private:
 
 			if (result == 4)
 				// Fully Covered
-				PixelShader::template rasterizeBlock<false>(eqn, x, y);
+				PixelShader::template drawBlock<false>(eqn, x, y);
 			else
 				// Partially Covered
-				PixelShader::template rasterizeBlock<true>(eqn, x, y);
+				PixelShader::template drawBlock<true>(eqn, x, y);
 		}
 	}
 };
