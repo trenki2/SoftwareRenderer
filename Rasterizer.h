@@ -83,10 +83,8 @@ struct ParameterEquation {
 		const EdgeEquation &e0, 
 		const EdgeEquation &e1, 
 		const EdgeEquation &e2, 
-		float area)
+		float factor)
 	{
-		float factor = 1.0f / (2.0f * area);
-
 		a = factor * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
 		b = factor * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
 		c = factor * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
@@ -124,7 +122,7 @@ struct ParameterEquation {
 };
 
 struct TriangleEquations {
-	float area;
+	float area2;
 
 	EdgeEquation e0;
 	EdgeEquation e1;
@@ -140,16 +138,17 @@ struct TriangleEquations {
 		e1.init(v1, v2);
 		e2.init(v2, v0);
 
-		area = 0.5f * (e0.c + e1.c + e2.c);
+		area2 = e0.c + e1.c + e2.c;
 
 		// Cull backfacing triangles.
-		if (area <= 0)
+		if (area2 <= 0)
 			return;
 		
-		z.init(v0.z, v1.z, v2.z, e0, e1, e2, area);
-		w.init(v0.w, v1.w, v2.w, e0, e1, e2, area);
+		float factor = 1.0f / area2;
+		z.init(v0.z, v1.z, v2.z, e0, e1, e2, factor);
+		w.init(v0.w, v1.w, v2.w, e0, e1, e2, factor);
 		for (int i = 0; i < varCount; ++i)
-			var[i].init(v0.var[i], v1.var[i], v2.var[i], e0, e1, e2, area);
+			var[i].init(v0.var[i], v1.var[i], v2.var[i], e0, e1, e2, factor);
 	}
 };
 
@@ -448,7 +447,7 @@ private:
 		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
 
 		// Check if triangle is backfacing.
-		if (eqn.area <= 0)
+		if (eqn.area2 <= 0)
 			return;
 
 		// Compute triangle bounding box.
