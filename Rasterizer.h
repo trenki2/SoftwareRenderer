@@ -345,7 +345,7 @@ public:
 	template <class PixelShader>
 	void setPixelShader()
 	{
-		m_triangleFunc = &Rasterizer::drawTriangleTemplate<PixelShader>;
+		m_triangleFunc = &Rasterizer::drawTriangleSpanTemplate<PixelShader>;
 		m_lineFunc = &Rasterizer::drawLineTemplate<PixelShader>;
 		m_pointFunc = &Rasterizer::drawPointTemplate<PixelShader>;
 	}
@@ -441,7 +441,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawTriangleTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawTriangleBlockTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		// Compute triangle equations.
 		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
@@ -504,6 +504,115 @@ private:
 			else
 				// Partially Covered
 				PixelShader::template drawBlock<true>(eqn, x, y);
+		}
+	}
+
+	template <class PixelShader>
+	void drawTriangleSpanTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	{
+		// Compute triangle equations.
+		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
+
+		// Check if triangle is backfacing.
+		if (eqn.area2 <= 0)
+			return;
+
+		const Vertex *t = &v0;
+		const Vertex *m = &v1;
+		const Vertex *b = &v2;
+
+		// Sort vertices from top to bottom.
+		if (t->y > m->y) std::swap(t, m);
+		if (m->y > b->y) std::swap(m, b);
+		if (t->y > m->y) std::swap(t, m);
+
+		float dy = (b->y - t->y);
+		float iy = (m->y - t->y);
+
+		Vertex v4;
+		v4.y = m->y;
+		v4.x = t->x + ((b->x - t->x) / dy) * iy;
+		if (PixelShader::InterpolateZ) v4.z = t->z + ((b->z - t->z) / dy) * iy;
+		if (PixelShader::InterpolateW) v4.w = t->w + ((b->w - t->w) / dy) * iy;
+		for (int i = 0; i < PixelShader::VarCount; ++i)
+			v4.var[i] = t->var[i] + ((b->var[i] - t->var[i]) / dy) * iy;
+
+		const Vertex *l = m, *r = &v4;
+		if (l->x > r->x) std::swap(l, r);
+
+		fillBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
+		fillTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
+	}
+
+	template <class PixelShader>
+	void fillBottomFlatTriangle(const TriangleEquations &eqn, const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	{
+		float invslope1 = (v1.x - v0.x) / (v1.y - v0.y);
+		float invslope2 = (v2.x - v0.x) / (v2.y - v0.y);
+
+		//float curx1 = v0.x;
+		//float curx2 = v0.x;
+
+		#pragma omp parallel for
+		for (int scanlineY = (int)v0.y; scanlineY <= (int)v1.y; scanlineY++)
+		{
+			float dy = (scanlineY - v0.y);
+			float curx1 = v0.x + invslope1 * dy;
+			float curx2 = v0.x + invslope2 * dy;
+
+			// Clip to scissor rect
+			int xl = std::max(m_minX, (int)curx1);
+			int xr = std::min(m_maxX, (int)curx2);
+
+			fillSpan<PixelShader>(eqn, xl, scanlineY, xr);
+			
+			// curx1 += invslope1;
+			// curx2 += invslope2;
+		}
+	}
+
+	template <class PixelShader>
+	void fillTopFlatTriangle(const TriangleEquations &eqn, const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	{
+		float invslope1 = (v2.x - v0.x) / (v2.y - v0.y);
+		float invslope2 = (v2.x - v1.x) / (v2.y - v1.y);
+
+		// float curx1 = v2.x;
+		// float curx2 = v2.x;
+
+		#pragma omp parallel for
+		for (int scanlineY = (int)v2.y; scanlineY > (int)v0.y; scanlineY--)
+		{
+			float dy = (scanlineY - v2.y);
+			float curx1 = v2.x + invslope1 * dy;
+			float curx2 = v2.x + invslope2 * dy;
+
+			// Clip to scissor rect
+			int xl = std::max(m_minX, (int)curx1);
+			int xr = std::min(m_maxX, (int)curx2);
+
+			fillSpan<PixelShader>(eqn, xl, scanlineY, xr);
+			// curx1 -= invslope1;
+			// curx2 -= invslope2;
+		}
+	}
+
+	template <class PixelShader>
+	void fillSpan(const TriangleEquations &eqn, int x, int y, int x2) const
+	{
+		float xf = x + 0.5f;
+		float yf = y + 0.5f;
+
+		PixelData p;
+		p.y = y;
+		p.init(eqn, xf, yf, PixelShader::VarCount, PixelShader::InterpolateZ, PixelShader::InterpolateW);
+
+		while (x < x2)
+		{
+			p.x = x;
+			PixelShader::drawPixel(p);
+			p.stepX(eqn, PixelShader::VarCount, PixelShader::InterpolateZ, PixelShader::InterpolateW);
+			x++;
 		}
 	}
 };

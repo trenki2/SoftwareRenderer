@@ -120,7 +120,7 @@ Vertex v0, v1, v2;
 	v1.var[1] = 0.0;
 	v1.var[2] = 1.0;
 
-	for (int i = 0; i < 5000; ++i)
+	for (int i = 0; i < 500000; ++i)
 	{
 		Vertex v0 = randomVertex();
 		Vertex v1 = randomVertex();
