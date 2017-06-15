@@ -296,6 +296,24 @@ public:
 		}
 	}
 
+	static void drawSpan(const TriangleEquations &eqn, int x, int y, int x2)
+	{
+		float xf = x + 0.5f;
+		float yf = y + 0.5f;
+
+		PixelData p;
+		p.y = y;
+		p.init(eqn, xf, yf, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
+
+		while (x < x2)
+		{
+			p.x = x;
+			Derived::drawPixel(p);
+			p.stepX(eqn, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
+			x++;
+		}
+	}
+
 	/// This is called per pixel.
 	static void drawPixel(const PixelData &p)
 	{
@@ -564,7 +582,7 @@ private:
 			int xl = std::max(m_minX, (int)curx1);
 			int xr = std::min(m_maxX, (int)curx2);
 
-			fillSpan<PixelShader>(eqn, xl, scanlineY, xr);
+			PixelShader::drawSpan(eqn, xl, scanlineY, xr);
 			
 			// curx1 += invslope1;
 			// curx2 += invslope2;
@@ -591,28 +609,11 @@ private:
 			int xl = std::max(m_minX, (int)curx1);
 			int xr = std::min(m_maxX, (int)curx2);
 
-			fillSpan<PixelShader>(eqn, xl, scanlineY, xr);
+			PixelShader::drawSpan(eqn, xl, scanlineY, xr);
 			// curx1 -= invslope1;
 			// curx2 -= invslope2;
 		}
 	}
 
-	template <class PixelShader>
-	void fillSpan(const TriangleEquations &eqn, int x, int y, int x2) const
-	{
-		float xf = x + 0.5f;
-		float yf = y + 0.5f;
-
-		PixelData p;
-		p.y = y;
-		p.init(eqn, xf, yf, PixelShader::VarCount, PixelShader::InterpolateZ, PixelShader::InterpolateW);
-
-		while (x < x2)
-		{
-			p.x = x;
-			PixelShader::drawPixel(p);
-			p.stepX(eqn, PixelShader::VarCount, PixelShader::InterpolateZ, PixelShader::InterpolateW);
-			x++;
-		}
-	}
+	
 };
