@@ -615,5 +615,20 @@ private:
 		}
 	}
 
-	
+	template <class PixelShader>
+	void drawTriangleAdaptiveTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	{
+		// Compute triangle bounding box.
+		float minX = (float)std::min(std::min(v0.x, v1.x), v2.x);
+		float maxX = (float)std::max(std::max(v0.x, v1.x), v2.x);
+		float minY = (float)std::min(std::min(v0.y, v1.y), v2.y);
+		float maxY = (float)std::max(std::max(v0.y, v1.y), v2.y);
+
+		float orient = (maxX - minX) / (maxY - minY);
+
+		if (orient > 0.4 && orient < 1.6)
+			drawTriangleBlockTemplate<PixelShader>(v0, v1, v2);
+		else
+			drawTriangleSpanTemplate<PixelShader>(v0, v1, v2);
+	}
 };
