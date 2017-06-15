@@ -547,19 +547,34 @@ private:
 		float dy = (b->y - t->y);
 		float iy = (m->y - t->y);
 
-		Vertex v4;
-		v4.y = m->y;
-		v4.x = t->x + ((b->x - t->x) / dy) * iy;
-		if (PixelShader::InterpolateZ) v4.z = t->z + ((b->z - t->z) / dy) * iy;
-		if (PixelShader::InterpolateW) v4.w = t->w + ((b->w - t->w) / dy) * iy;
-		for (int i = 0; i < PixelShader::VarCount; ++i)
-			v4.var[i] = t->var[i] + ((b->var[i] - t->var[i]) / dy) * iy;
+		if (m->y == t->y)
+		{
+			const Vertex *l = m, *r = t;
+			if (l->x > r->x) std::swap(l, r);
+			fillTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
+		}
+		else if (m->y == b->y)
+		{
+			const Vertex *l = m, *r = b;
+			if (l->x > r->x) std::swap(l, r);
+			fillBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
+		} 
+		else
+		{
+			Vertex v4;
+			v4.y = m->y;
+			v4.x = t->x + ((b->x - t->x) / dy) * iy;
+			if (PixelShader::InterpolateZ) v4.z = t->z + ((b->z - t->z) / dy) * iy;
+			if (PixelShader::InterpolateW) v4.w = t->w + ((b->w - t->w) / dy) * iy;
+			for (int i = 0; i < PixelShader::VarCount; ++i)
+				v4.var[i] = t->var[i] + ((b->var[i] - t->var[i]) / dy) * iy;
 
-		const Vertex *l = m, *r = &v4;
-		if (l->x > r->x) std::swap(l, r);
+			const Vertex *l = m, *r = &v4;
+			if (l->x > r->x) std::swap(l, r);
 
-		fillBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
-		fillTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
+			fillBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
+			fillTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
+		}
 	}
 
 	template <class PixelShader>
