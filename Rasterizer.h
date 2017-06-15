@@ -404,8 +404,8 @@ private:
 	PixelData pixelDataFromVertex(const Vertex & v) const
 	{
 		PixelData p;
-		p.x = v.x;
-		p.y = v.y;
+		p.x = (int)v.x;
+		p.y = (int)v.y;
 		if (PixelShader::InterpolateZ) p.z = v.z;
 		if (PixelShader::InterpolateW) p.w = v.w;
 		for (int i = 0; i < PixelShader::VarCount; ++i)
