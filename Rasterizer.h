@@ -551,13 +551,13 @@ private:
 		{
 			const Vertex *l = m, *r = t;
 			if (l->x > r->x) std::swap(l, r);
-			fillTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
+			drawTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
 		}
 		else if (m->y == b->y)
 		{
 			const Vertex *l = m, *r = b;
 			if (l->x > r->x) std::swap(l, r);
-			fillBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
+			drawBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
 		} 
 		else
 		{
@@ -572,13 +572,13 @@ private:
 			const Vertex *l = m, *r = &v4;
 			if (l->x > r->x) std::swap(l, r);
 
-			fillBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
-			fillTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
+			drawBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
+			drawTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
 		}
 	}
 
 	template <class PixelShader>
-	void fillBottomFlatTriangle(const TriangleEquations &eqn, const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawBottomFlatTriangle(const TriangleEquations &eqn, const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		float invslope1 = (v1.x - v0.x) / (v1.y - v0.y);
 		float invslope2 = (v2.x - v0.x) / (v2.y - v0.y);
@@ -605,7 +605,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void fillTopFlatTriangle(const TriangleEquations &eqn, const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawTopFlatTriangle(const TriangleEquations &eqn, const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		float invslope1 = (v2.x - v0.x) / (v2.y - v0.y);
 		float invslope2 = (v2.x - v1.x) / (v2.y - v1.y);
