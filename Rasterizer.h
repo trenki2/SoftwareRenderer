@@ -334,12 +334,20 @@ protected:
 
 class DummyShader : public PixelShaderBase<DummyShader> {};
 
+enum class RasterMode {
+	Span,
+	Block,
+	Adaptive
+};
+
 class Rasterizer {
 private:
 	int m_minX;
 	int m_maxX;
 	int m_minY;
 	int m_maxY;
+
+	RasterMode rasterMode;
 
 	void (Rasterizer::*m_triangleFunc)(const Vertex& v0, const Vertex &v1, const Vertex &v2) const;
 	void (Rasterizer::*m_lineFunc)(const Vertex& v0, const Vertex& v1) const;
@@ -348,8 +356,14 @@ private:
 public:
 	Rasterizer()
 	{
+		setRasterMode(RasterMode::Span);
 		setScissorRect(0, 0, 0, 0);
 		setPixelShader<DummyShader>();
+	}
+
+	void setRasterMode(RasterMode mode)
+	{
+		rasterMode = mode;
 	}
 
 	void setScissorRect(int minX, int minY, int maxX, int maxY)
@@ -363,9 +377,9 @@ public:
 	template <class PixelShader>
 	void setPixelShader()
 	{
-		m_triangleFunc = &Rasterizer::drawTriangleSpanTemplate<PixelShader>;
+		m_triangleFunc = &Rasterizer::drawTriangleModeTemplate<PixelShader>;
 		m_lineFunc = &Rasterizer::drawLineTemplate<PixelShader>;
-		m_pointFunc = &Rasterizer::drawPointTemplate<PixelShader>;
+		m_pointFunc = &Rasterizer::drawPointTemplate<PixelShader>;	
 	}
 
 	void drawPoint(const Vertex &v) const
@@ -645,5 +659,22 @@ private:
 			drawTriangleBlockTemplate<PixelShader>(v0, v1, v2);
 		else
 			drawTriangleSpanTemplate<PixelShader>(v0, v1, v2);
+	}
+
+	template <class PixelShader>
+	void drawTriangleModeTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	{
+		switch (rasterMode)
+		{
+			case RasterMode::Span:
+				drawTriangleSpanTemplate<PixelShader>(v0, v1, v2);
+				break;
+			case RasterMode::Block:
+				drawTriangleBlockTemplate<PixelShader>(v0, v1, v2);
+				break;
+			case RasterMode::Adaptive:
+				drawTriangleAdaptiveTemplate<PixelShader>(v0, v1, v2);
+				break;
+		}
 	}
 };
