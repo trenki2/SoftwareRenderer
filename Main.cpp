@@ -47,11 +47,16 @@ public:
 	
 	static SDL_Surface* surface;
 
+	static int float2int(float v)
+	{
+		return _mm_cvtt_ss2si(_mm_load_ss(&v));
+	}
+
 	static void drawPixel(const PixelData &p)
 	{
-		int rint = (int)(p.var[0] * 255);
-		int gint = (int)(p.var[1] * 255);
-		int bint = (int)(p.var[2] * 255);
+		int rint = float2int(p.var[0] * 255);
+		int gint = float2int(p.var[1] * 255);
+		int bint = float2int(p.var[2] * 255);
 		
 		Uint32 color = rint << 16 | gint << 8 | bint;
 
