@@ -1,18 +1,11 @@
 #pragma once
 
 #include <algorithm>
+#include "IRasterizer.h"
+
+namespace swr {
 
 const int BlockSize = 8;
-const int MaxVar = 32;
-
-struct Vertex {
-	float x;
-	float y;
-	float z;
-	float w;
-
-	float var[MaxVar];
-};
 
 struct EdgeEquation {
 	float a;
@@ -332,7 +325,7 @@ protected:
 	}
 };
 
-class DummyShader : public PixelShaderBase<DummyShader> {};
+class DummyPixelShader : public PixelShaderBase<DummyPixelShader> {};
 
 enum class RasterMode {
 	Span,
@@ -340,7 +333,7 @@ enum class RasterMode {
 	Adaptive
 };
 
-class Rasterizer {
+class Rasterizer : public IRasterizer {
 private:
 	int m_minX;
 	int m_maxX;
@@ -358,7 +351,7 @@ public:
 	{
 		setRasterMode(RasterMode::Span);
 		setScissorRect(0, 0, 0, 0);
-		setPixelShader<DummyShader>();
+		setPixelShader<DummyPixelShader>();
 	}
 
 	void setRasterMode(RasterMode mode)
@@ -387,7 +380,7 @@ public:
 		(this->*m_pointFunc)(v);
 	}
 
-	void drawLine(const Vertex &v0, const Vertex &v1)
+	void drawLine(const Vertex &v0, const Vertex &v1) const
 	{
 		(this->*m_lineFunc)(v0, v1);
 	}
@@ -395,6 +388,33 @@ public:
 	void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		(this->*m_triangleFunc)(v0, v1, v2);
+	}
+
+	void drawPointList(const Vertex *vertices, const int *indices, int indexCount) const
+	{
+		for (size_t i = 0; i < indexCount; ++i) {
+			if (indices[i] == -1)
+				continue;
+			drawPoint(vertices[indices[i]]);
+		}
+	}
+
+    void drawLineList(const Vertex *vertices, const int *indices, int indexCount) const
+	{
+		for (size_t i = 0; i + 2 <= indexCount; i += 2) {
+			if (indices[i] == -1)
+				continue;
+			drawLine(vertices[indices[i]], vertices[indices[i + 1]]);
+		}
+	}
+
+	void drawTriangleList(const Vertex *vertices, const int *indices, int indexCount) const
+	{
+		for (size_t i = 0; i + 3 <= indexCount; i += 3) {
+			if (indices[i] == -1)
+				continue;
+			drawTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+		}
 	}
 
 private:
@@ -678,3 +698,5 @@ private:
 		}
 	}
 };
+
+} // end namespace swr

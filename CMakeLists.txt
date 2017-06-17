@@ -4,7 +4,9 @@ project(SoftwareRenderer)
 
 set(SOURCE_FILES 
 	Main.cpp 
-	Rasterizer.h)
+	IRasterizer.h
+	Rasterizer.h
+	VertexProcessor.h)
 
 if (EXISTS "${CMAKE_BINARY_DIR}/CMakeTools/CMakeToolsHelpers.cmake")
 	include(${CMAKE_BINARY_DIR}/CMakeTools/CMakeToolsHelpers.cmake)

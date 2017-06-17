@@ -1,5 +1,10 @@
 #include "SDL.h"
 #include "Rasterizer.h"
+#include "VertexProcessor.h"
+
+using namespace swr;
+
+
 
 /*
 * Set the pixel at (x, y) to the given value
@@ -60,6 +65,27 @@ public:
 	}
 };
 
+struct VertexData {
+	float x, y, z;
+	float r, g, b;
+};
+
+class VertexShader : public VertexShaderBase<VertexShader> {
+public:
+	static const int AttribCount = 1;
+
+    static void processVertex(VertexInput in, VertexOutput *out)
+    {
+		const VertexData *data = static_cast<const VertexData*>(in[0]);
+		out->x = data->x;
+		out->y = data->y;
+		out->z = data->z;
+		out->var[0] = data->r;
+		out->var[1] = data->g;
+		out->var[2] = data->b;
+    }
+};
+
 SDL_Surface* PixelShader::surface;
 
 Vertex randomVertex()
@@ -93,13 +119,50 @@ int main(int argc, char *argv[])
 
 	srand(1234);
 
+
+
+	VertexData vdata[3];
+	
+	vdata[0].x = 320;
+	vdata[0].y = 100;
+	vdata[0].r = 1.0;
+	vdata[0].g = 0.0;
+	vdata[0].b = 0.0;
+
+	vdata[1].x = 480;
+	vdata[1].y = 300;
+	vdata[1].r = 0.0;
+	vdata[1].g = 0.0;
+	vdata[1].b = 1.0;
+
+	vdata[2].x = 180;
+	vdata[2].y = 200;
+	vdata[2].r = 0.0;
+	vdata[2].g = 1.0;
+	vdata[2].b = 0.0;
+
+	int idata[3];
+	idata[0] = 0;
+	idata[1] = 1;
+	idata[2] = 2;
+
 	Rasterizer r;
+	VertexProcessor v(&r);
+
 	r.setScissorRect(0, 0, 640, 480);
 	r.setPixelShader<PixelShader>();
 	PixelShader::surface = screen;
 
+	v.setViewport(0, 0, 640, 480);
+	v.setCullMode(CullMode::None);
+	v.setVertexShader<VertexShader>();
+	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
+
 	Uint32 start = SDL_GetTicks();
+
+	v.drawElements(DrawMode::Triangle, 3, idata);
 	
+	/*
 Vertex v0, v1, v2;
 
 	v0.x = 320;
