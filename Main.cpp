@@ -83,8 +83,8 @@ class VertexShader : public VertexShaderBase<VertexShader> {
 public:
 	static const int AttribCount = 1;
 
-    static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
-    {
+	static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
+	{
 		const VertexData *data = static_cast<const VertexData*>(in[0]);
 		out->x = data->x;
 		out->y = data->y;
@@ -92,7 +92,7 @@ public:
 		out->var[0] = data->r;
 		out->var[1] = data->g;
 		out->var[2] = data->b;
-    }
+	}
 };
 
 SDL_Surface* PixelShader::surface;

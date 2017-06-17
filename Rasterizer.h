@@ -399,7 +399,7 @@ public:
 		}
 	}
 
-    void drawLineList(const Vertex *vertices, const int *indices, size_t indexCount) const
+	void drawLineList(const Vertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (size_t i = 0; i + 2 <= indexCount; i += 2) {
 			if (indices[i] == -1)
