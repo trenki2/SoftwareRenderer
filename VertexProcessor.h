@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <cassert>
 #include "IRasterizer.h"
 
 namespace swr {
@@ -19,8 +20,8 @@ enum class CullMode {
     CW
 };
 
-typedef Vertex VertexOutput;
-typedef const void *VertexInput[MaxVertexAttribs];
+typedef Vertex VertexShaderOutput;
+typedef const void *VertexShaderInput[MaxVertexAttribs];
 
 template <class Derived>
 class VertexShaderBase {
@@ -28,7 +29,7 @@ public:
     /// Number of vertex attribute pointers this vertex shader uses.
     static const int AttribCount = 0;
 
-    static void processVertex(VertexInput in, VertexOutput *out)
+    static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
     {
 
     }
@@ -40,10 +41,16 @@ class VertexProcessor {
 public:
     VertexProcessor(IRasterizer *rasterizer)
     {
-        m_rasterizer = rasterizer;
+		setRasterizer(rasterizer);
         setCullMode(CullMode::CCW);
         setVertexShader<DummyVertexShader>();
     }
+
+	void setRasterizer(IRasterizer *rasterizer)
+	{
+		assert(rasterizer != nullptr);
+		m_rasterizer = rasterizer;
+	}
 
     void setViewport(int x, int y, int width, int height)
     {
@@ -67,31 +74,33 @@ public:
     template <class VertexShader>
     void setVertexShader()
     {
+		assert(VertexShader::AttribCount <= MaxVertexAttribs);
+		m_attribCount = VertexShader::AttribCount;
         m_processVertexFunc = VertexShader::processVertex;
-        m_attribCount = VertexShader::AttribCount;
     }
 
     void setVertexAttribPointer(int index, int stride, const void *buffer)
     {
+		assert(index < MaxVertexAttribs);
         m_attributes[index].buffer = buffer;
         m_attributes[index].stride = stride;
     }
     
     void drawElements(DrawMode mode, size_t count, int *indices) const
     {
-        std::vector<VertexOutput> verticesOut;
-        std::vector<int> indicesOut;
+		verticesOut.clear();
+		indicesOut.clear();
 
         for (size_t i = 0; i < count; i++)
         {
             int index = indices[i];
 
-            VertexInput vIn;    
+            VertexShaderInput vIn;    
             vertexInputInit(vIn, index);
 
             indicesOut.push_back(index);
             verticesOut.resize(verticesOut.size() + 1);
-            VertexOutput &vOut = verticesOut.back();
+            VertexShaderOutput &vOut = verticesOut.back();
 
             processVertex(vIn, &vOut);
         }
@@ -111,7 +120,7 @@ public:
     }
 
 private:
-    void processVertex(VertexInput in, VertexOutput *out) const
+    void processVertex(VertexShaderInput in, VertexShaderOutput *out) const
     {
         (*m_processVertexFunc)(in, out);
     }
@@ -122,7 +131,7 @@ private:
         return (char*)attrib.buffer + attrib.stride * elementIndex;
     }
 
-    void vertexInputInit(VertexInput in, int index) const
+    void vertexInputInit(VertexShaderInput in, int index) const
     {
         for (int i = 0; i < m_attribCount; ++i)
             in[i] = attribPointer(i, index);
@@ -140,13 +149,16 @@ private:
     CullMode m_cullMode;
     IRasterizer *m_rasterizer;
     
-    void (*m_processVertexFunc)(VertexInput, VertexOutput*);
+    void (*m_processVertexFunc)(VertexShaderInput, VertexShaderOutput*);
     int m_attribCount;
 
     struct Attribute {
         const void *buffer;
         int stride;
     } m_attributes[MaxVertexAttribs];
+
+	mutable std::vector<VertexShaderOutput> verticesOut;
+	mutable std::vector<int> indicesOut;
 };
 
 } // end namespace swr

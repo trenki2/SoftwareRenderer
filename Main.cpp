@@ -4,7 +4,16 @@
 
 using namespace swr;
 
+class NullRasterizer : public IRasterizer {
+public:
+	virtual void drawPoint(const Vertex &v) const {}
+	virtual void drawLine(const Vertex &v0, const Vertex &v1) const {}
+	virtual void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2) const {}
 
+	virtual void drawPointList(const Vertex *vertices, const int *indices, size_t indexCount) const {}
+	virtual void drawLineList(const Vertex *vertices, const int *indices, size_t indexCount) const {}
+	virtual void drawTriangleList(const Vertex *vertices, const int *indices, size_t indexCount) const {}
+};
 
 /*
 * Set the pixel at (x, y) to the given value
@@ -74,7 +83,7 @@ class VertexShader : public VertexShaderBase<VertexShader> {
 public:
 	static const int AttribCount = 1;
 
-    static void processVertex(VertexInput in, VertexOutput *out)
+    static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
     {
 		const VertexData *data = static_cast<const VertexData*>(in[0]);
 		out->x = data->x;
@@ -162,6 +171,7 @@ int main(int argc, char *argv[])
 	idata[2] = 2;
 
 	Rasterizer r;
+	NullRasterizer nullRaster;
 	VertexProcessor v(&r);
 
 	r.setScissorRect(0, 0, 640, 480);
@@ -173,21 +183,28 @@ int main(int argc, char *argv[])
 	v.setVertexShader<VertexShader>();
 	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
 
-	std::vector<int> idata2;
-	std::vector<VertexData> vdata2;
+	size_t count = 500000;
 
-	for (int i = 0; i < 500000; i++)
+	std::vector<int> idata2(count);
+	std::vector<VertexData> vdata2(count);
+
+	for (int i = 0; i < count; i++)
 	{
-		idata2.push_back(i);
-		vdata2.push_back(randomVertexData());
+		idata2[i] = i;
+		vdata2[i] = randomVertexData();
 	}
 
 	Uint32 start = SDL_GetTicks();
 
 	v.drawElements(DrawMode::Triangle, 3, idata);
 
-	v.setVertexAttribPointer(0, sizeof(VertexData), &vdata2[0]);
-	v.drawElements(DrawMode::Triangle, idata2.size(), &idata2[0]);
+	//for (int i = 0; i < 10; ++i)
+	{
+		v.setVertexAttribPointer(0, sizeof(VertexData), &vdata2[0]);
+		v.drawElements(DrawMode::Triangle, idata2.size(), &idata2[0]);
+	}
+
+	
 	
 	/*
 Vertex v0, v1, v2;
