@@ -392,7 +392,7 @@ public:
 
 	void drawPointList(const Vertex *vertices, const int *indices, int indexCount) const
 	{
-		for (size_t i = 0; i < indexCount; ++i) {
+		for (int i = 0; i < indexCount; ++i) {
 			if (indices[i] == -1)
 				continue;
 			drawPoint(vertices[indices[i]]);
@@ -401,7 +401,7 @@ public:
 
     void drawLineList(const Vertex *vertices, const int *indices, int indexCount) const
 	{
-		for (size_t i = 0; i + 2 <= indexCount; i += 2) {
+		for (int i = 0; i + 2 <= indexCount; i += 2) {
 			if (indices[i] == -1)
 				continue;
 			drawLine(vertices[indices[i]], vertices[indices[i + 1]]);
@@ -410,7 +410,7 @@ public:
 
 	void drawTriangleList(const Vertex *vertices, const int *indices, int indexCount) const
 	{
-		for (size_t i = 0; i + 3 <= indexCount; i += 3) {
+		for (int i = 0; i + 3 <= indexCount; i += 3) {
 			if (indices[i] == -1)
 				continue;
 			drawTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);

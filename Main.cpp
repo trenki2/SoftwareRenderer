@@ -102,6 +102,21 @@ Vertex randomVertex()
 	return v;
 }
 
+VertexData randomVertexData()
+{
+	VertexData v;
+	
+	v.x = (float)(rand() % 640);
+	v.y = (float)(rand() % 480);
+	v.z = 0;
+
+	v.r = (float)rand() / RAND_MAX;
+	v.g = (float)rand() / RAND_MAX;
+	v.b = (float)rand() / RAND_MAX;
+
+	return v;
+}
+
 int main(int argc, char *argv[])
 {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -161,6 +176,18 @@ int main(int argc, char *argv[])
 	Uint32 start = SDL_GetTicks();
 
 	v.drawElements(DrawMode::Triangle, 3, idata);
+
+	std::vector<int> idata2;
+	std::vector<VertexData> vdata2;
+
+	for (size_t i = 0; i < 500000; i++)
+	{
+		idata2.push_back(i);
+		vdata2.push_back(randomVertexData());
+	}
+
+	v.setVertexAttribPointer(0, sizeof(VertexData), &vdata2[0]);
+	v.drawElements(DrawMode::Triangle, idata2.size(), &idata2[0]);
 	
 	/*
 Vertex v0, v1, v2;
@@ -194,7 +221,7 @@ Vertex v0, v1, v2;
 
 	r.drawTriangle(v0, v1, v2);
 
-	/*Vertex v0, v1;
+	Vertex v0, v1;
 
 	v0.x = 150;
 	v0.y = 100;

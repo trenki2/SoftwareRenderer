@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "IRasterizer.h"
 
 namespace swr {
@@ -76,31 +77,52 @@ public:
         m_attributes[index].stride = stride;
     }
     
-    void drawElements(DrawMode type, int count, int *indices)
+    void drawElements(DrawMode mode, int count, int *indices) const
     {
-        VertexInput vin;
-        VertexOutput v0, v1, v2;
+        std::vector<VertexOutput> verticesOut;
+        std::vector<int> indicesOut;
 
-        prepareVertexInput(vin, 0); processVertex(vin, &v0);
-        prepareVertexInput(vin, 1); processVertex(vin, &v1);
-        prepareVertexInput(vin, 2); processVertex(vin, &v2);
+        for (int i = 0; i < count; i++)
+        {
+            int index = indices[i];
 
-        m_rasterizer->drawTriangle(v0, v1, v2);
+            VertexInput vIn;    
+            vertexInputInit(vIn, index);
+
+            indicesOut.push_back(index);
+            verticesOut.resize(verticesOut.size() + 1);
+            VertexOutput &vOut = verticesOut.back();
+
+            processVertex(vIn, &vOut);
+        }
+
+        switch (mode)
+        {
+            case DrawMode::Triangle:
+                m_rasterizer->drawTriangleList(&verticesOut[0], &indicesOut[0], indicesOut.size());
+                break;
+            case DrawMode::Line:
+                m_rasterizer->drawLineList(&verticesOut[0], &indicesOut[0], indicesOut.size());
+                break;
+            case DrawMode::Point:
+                m_rasterizer->drawPointList(&verticesOut[0], &indicesOut[0], indicesOut.size());
+                break;
+        }
     }
 
 private:
-    void processVertex(VertexInput in, VertexOutput *out)
+    void processVertex(VertexInput in, VertexOutput *out) const
     {
         (*m_processVertexFunc)(in, out);
     }
 
-    const void *attribPointer(int attribIndex, int elementIndex)
+    const void *attribPointer(int attribIndex, int elementIndex) const
     {
-        Attribute &attrib = m_attributes[attribIndex];
+        const Attribute &attrib = m_attributes[attribIndex];
         return (char*)attrib.buffer + attrib.stride * elementIndex;
     }
 
-    void prepareVertexInput(VertexInput in, int index)
+    void vertexInputInit(VertexInput in, int index) const
     {
         for (int i = 0; i < m_attribCount; ++i)
             in[i] = attribPointer(i, index);
