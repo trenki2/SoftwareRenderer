@@ -390,7 +390,7 @@ public:
 		(this->*m_triangleFunc)(v0, v1, v2);
 	}
 
-	void drawPointList(const Vertex *vertices, const int *indices, int indexCount) const
+	void drawPointList(const Vertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (int i = 0; i < indexCount; ++i) {
 			if (indices[i] == -1)
@@ -399,7 +399,7 @@ public:
 		}
 	}
 
-    void drawLineList(const Vertex *vertices, const int *indices, int indexCount) const
+    void drawLineList(const Vertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (int i = 0; i + 2 <= indexCount; i += 2) {
 			if (indices[i] == -1)
@@ -408,7 +408,7 @@ public:
 		}
 	}
 
-	void drawTriangleList(const Vertex *vertices, const int *indices, int indexCount) const
+	void drawTriangleList(const Vertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (int i = 0; i + 3 <= indexCount; i += 3) {
 			if (indices[i] == -1)

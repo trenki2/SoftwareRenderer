@@ -77,7 +77,7 @@ public:
         m_attributes[index].stride = stride;
     }
     
-    void drawElements(DrawMode mode, int count, int *indices) const
+    void drawElements(DrawMode mode, size_t count, int *indices) const
     {
         std::vector<VertexOutput> verticesOut;
         std::vector<int> indicesOut;

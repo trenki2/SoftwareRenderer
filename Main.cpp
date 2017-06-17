@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 	std::vector<int> idata2;
 	std::vector<VertexData> vdata2;
 
-	for (size_t i = 0; i < 500000; i++)
+	for (int i = 0; i < 500000; i++)
 	{
 		idata2.push_back(i);
 		vdata2.push_back(randomVertexData());
