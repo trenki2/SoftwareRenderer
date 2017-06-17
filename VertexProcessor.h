@@ -82,7 +82,7 @@ public:
         std::vector<VertexOutput> verticesOut;
         std::vector<int> indicesOut;
 
-        for (int i = 0; i < count; i++)
+        for (size_t i = 0; i < count; i++)
         {
             int index = indices[i];
 
