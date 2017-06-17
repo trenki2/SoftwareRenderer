@@ -359,12 +359,12 @@ public:
 		rasterMode = mode;
 	}
 
-	void setScissorRect(int minX, int minY, int maxX, int maxY)
+	void setScissorRect(int x, int y, int width, int height)
 	{
-		m_minX = minX;
-		m_minY = minY;
-		m_maxX = maxX;
-		m_maxY = maxY;
+		m_minX = x;
+		m_minY = y;
+		m_maxX = x + width;
+		m_maxY = y + height;
 	}
 	
 	template <class PixelShader>
