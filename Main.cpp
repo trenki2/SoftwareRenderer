@@ -173,10 +173,6 @@ int main(int argc, char *argv[])
 	v.setVertexShader<VertexShader>();
 	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
 
-	Uint32 start = SDL_GetTicks();
-
-	v.drawElements(DrawMode::Triangle, 3, idata);
-
 	std::vector<int> idata2;
 	std::vector<VertexData> vdata2;
 
@@ -185,6 +181,10 @@ int main(int argc, char *argv[])
 		idata2.push_back(i);
 		vdata2.push_back(randomVertexData());
 	}
+
+	Uint32 start = SDL_GetTicks();
+
+	v.drawElements(DrawMode::Triangle, 3, idata);
 
 	v.setVertexAttribPointer(0, sizeof(VertexData), &vdata2[0]);
 	v.drawElements(DrawMode::Triangle, idata2.size(), &idata2[0]);
@@ -220,8 +220,8 @@ Vertex v0, v1, v2;
 	}
 
 	r.drawTriangle(v0, v1, v2);
-
-	Vertex v0, v1;
+	*/
+	/*Vertex v0, v1;
 
 	v0.x = 150;
 	v0.y = 100;
@@ -235,8 +235,8 @@ Vertex v0, v1, v2;
 	v1.var[1] = 0.0;
 	v1.var[2] = 1.0;
 
-	r.drawLine(v0, v1);
-	*/
+	r.drawLine(v0, v1);*/
+	
 	Uint32 end = SDL_GetTicks();
 	printf("%i\n", end - start);
 
