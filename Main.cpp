@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 	v.setVertexShader<VertexShader>();
 	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
 
-	size_t count = 500000;
+	int count = 500000;
 
 	std::vector<int> idata2(count);
 	std::vector<VertexData> vdata2(count);

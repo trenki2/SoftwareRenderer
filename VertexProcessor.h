@@ -88,41 +88,52 @@ public:
     
     void drawElements(DrawMode mode, size_t count, int *indices) const
     {
-		verticesOut.clear();
-		indicesOut.clear();
+		m_verticesOut.clear();
+		m_indicesOut.clear();
 
         for (size_t i = 0; i < count; i++)
         {
             int index = indices[i];
 
             VertexShaderInput vIn;    
-            vertexInputInit(vIn, index);
+            initVertexInput(vIn, index);
 
-            indicesOut.push_back(index);
-            verticesOut.resize(verticesOut.size() + 1);
-            VertexShaderOutput &vOut = verticesOut.back();
+            m_indicesOut.push_back(index);
+            m_verticesOut.resize(m_verticesOut.size() + 1);
+            VertexShaderOutput &vOut = m_verticesOut.back();
 
             processVertex(vIn, &vOut);
         }
 
-        switch (mode)
-        {
-            case DrawMode::Triangle:
-                m_rasterizer->drawTriangleList(&verticesOut[0], &indicesOut[0], indicesOut.size());
-                break;
-            case DrawMode::Line:
-                m_rasterizer->drawLineList(&verticesOut[0], &indicesOut[0], indicesOut.size());
-                break;
-            case DrawMode::Point:
-                m_rasterizer->drawPointList(&verticesOut[0], &indicesOut[0], indicesOut.size());
-                break;
-        }
+        clipPrimitives(mode);
+
+        // TODO: Perspective divide and viewport transform
+        
+        drawPrimitives(mode);
     }
 
 private:
-    void processVertex(VertexShaderInput in, VertexShaderOutput *out) const
+    struct ClipMask {
+        enum Enum {
+            PosX = 0x01,
+            NegX = 0x02,
+            PosY = 0x04,
+            NegY = 0x08,
+            PosZ = 0x10,
+            NegZ = 0x20
+        };
+    };
+
+    int clipMask(VertexShaderOutput &v) const
     {
-        (*m_processVertexFunc)(in, out);
+        int mask = 0;
+        if (v.w - v.x < 0) mask |= ClipMask::PosX;
+        if (v.x + v.w < 0) mask |= ClipMask::NegX;
+        if (v.w - v.y < 0) mask |= ClipMask::PosY;
+        if (v.y + v.w < 0) mask |= ClipMask::NegY;
+        if (v.w - v.z < 0) mask |= ClipMask::PosZ;
+        if (v.z + v.w < 0) mask |= ClipMask::NegZ;
+        return mask;
     }
 
     const void *attribPointer(int attribIndex, int elementIndex) const
@@ -131,10 +142,72 @@ private:
         return (char*)attrib.buffer + attrib.stride * elementIndex;
     }
 
-    void vertexInputInit(VertexShaderInput in, int index) const
+    void processVertex(VertexShaderInput in, VertexShaderOutput *out) const
+    {
+        (*m_processVertexFunc)(in, out);
+    }
+
+    void initVertexInput(VertexShaderInput in, int index) const
     {
         for (int i = 0; i < m_attribCount; ++i)
             in[i] = attribPointer(i, index);
+    }
+
+    void clipPoints() const
+    {
+        m_clipMask.clear();
+        m_clipMask.resize(m_verticesOut.size());
+        
+        for (size_t i = 0; i < m_verticesOut.size(); i++)
+            m_clipMask[i] = clipMask(m_verticesOut[i]);
+
+        for (size_t i = 0; i < m_indicesOut.size(); i++)
+        {
+            if (m_clipMask[m_indicesOut[i]])    
+                m_indicesOut[i] = -1;
+        }
+    }
+
+    void clipLines() const
+    {
+        // TODO:
+    }
+
+    void clipTriangles() const
+    {
+        // TODO:
+    }
+
+    void clipPrimitives(DrawMode mode) const
+    {
+        switch (mode)
+        {
+            case DrawMode::Point:
+                clipPoints();
+                break;
+            case DrawMode::Line:
+                clipLines();
+                break;
+            case DrawMode::Triangle:
+                clipTriangles();
+                break;
+        }
+    }
+
+    void drawPrimitives(DrawMode mode) const
+    {
+        switch (mode)
+        {
+            case DrawMode::Triangle:
+                m_rasterizer->drawTriangleList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
+                break;
+            case DrawMode::Line:
+                m_rasterizer->drawLineList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
+                break;
+            case DrawMode::Point:
+                m_rasterizer->drawPointList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
+                break;
+        }
     }
 
 private:
@@ -157,8 +230,9 @@ private:
         int stride;
     } m_attributes[MaxVertexAttribs];
 
-	mutable std::vector<VertexShaderOutput> verticesOut;
-	mutable std::vector<int> indicesOut;
+	mutable std::vector<VertexShaderOutput> m_verticesOut;
+	mutable std::vector<int> m_indicesOut;
+    mutable std::vector<int> m_clipMask;
 };
 
 } // end namespace swr
