@@ -15,44 +15,6 @@ public:
 	virtual void drawTriangleList(const Vertex *vertices, const int *indices, size_t indexCount) const {}
 };
 
-/*
-* Set the pixel at (x, y) to the given value
-* NOTE: The surface must be locked before calling this!
-*/
-void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
-{
-	int bpp = surface->format->BytesPerPixel;
-
-	/* Here p is the address to the pixel we want to set */
-	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-
-	switch(bpp) {
-	case 1:
-		*p = pixel;
-		break;
-
-	case 2:
-		*(Uint16 *)p = pixel;
-		break;
-
-	case 3:
-		if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-			p[0] = (pixel >> 16) & 0xff;
-			p[1] = (pixel >> 8) & 0xff;
-			p[2] = pixel & 0xff;
-		} else {
-			p[0] = pixel & 0xff;
-			p[1] = (pixel >> 8) & 0xff;
-			p[2] = (pixel >> 16) & 0xff;
-		}
-		break;
-
-	case 4:
-		*(Uint32 *)p = pixel;
-		break;
-	}
-}
-
 class PixelShader : public PixelShaderBase<PixelShader> {
 public:
 	static const bool InterpolateZ = false;
@@ -89,6 +51,7 @@ public:
 		out->x = data->x;
 		out->y = data->y;
 		out->z = data->z;
+		out->w = 1.0f;
 		out->var[0] = data->r;
 		out->var[1] = data->g;
 		out->var[2] = data->b;
@@ -97,19 +60,6 @@ public:
 
 SDL_Surface* PixelShader::surface;
 
-Vertex randomVertex()
-{
-	Vertex v;
-	
-	v.x = (float)(rand() % 640);
-	v.y = (float)(rand() % 480);
-
-	v.var[0] = (float)rand() / RAND_MAX;
-	v.var[1] = (float)rand() / RAND_MAX;
-	v.var[2] = (float)rand() / RAND_MAX;
-
-	return v;
-}
 
 VertexData randomVertexData()
 {
@@ -126,25 +76,8 @@ VertexData randomVertexData()
 	return v;
 }
 
-int main(int argc, char *argv[])
+void drawTriangles(SDL_Surface *screen)
 {
-	SDL_Init(SDL_INIT_VIDEO);
-
-	SDL_Window *window = SDL_CreateWindow(
-		"Software Renderer",
-		SDL_WINDOWPOS_UNDEFINED, 
-		SDL_WINDOWPOS_UNDEFINED,
-		640, 
-		480,
-		0
-	);
-
-	SDL_Surface *screen = SDL_GetWindowSurface(window);
-
-	srand(1234);
-
-
-
 	VertexData vdata[3];
 	
 	vdata[0].x = 320;
@@ -171,7 +104,6 @@ int main(int argc, char *argv[])
 	idata[2] = 2;
 
 	Rasterizer r;
-	NullRasterizer nullRaster;
 	VertexProcessor v(&r);
 
 	r.setScissorRect(0, 0, 640, 480);
@@ -198,69 +130,72 @@ int main(int argc, char *argv[])
 
 	v.drawElements(DrawMode::Triangle, 3, idata);
 
-	//for (int i = 0; i < 10; ++i)
-	{
-		v.setVertexAttribPointer(0, sizeof(VertexData), &vdata2[0]);
-		v.drawElements(DrawMode::Triangle, idata2.size(), &idata2[0]);
-	}
+	v.setVertexAttribPointer(0, sizeof(VertexData), &vdata2[0]);
+	v.drawElements(DrawMode::Triangle, idata2.size(), &idata2[0]);
 
-	
-	
-	/*
-Vertex v0, v1, v2;
-
-	v0.x = 320;
-	v0.y = 100;
-	v0.var[0] = 1.0;
-	v0.var[1] = 0.0;
-	v0.var[2] = 0.0;
-
-	v2.x = 180;
-	v2.y = 200;
-	v2.var[0] = 0.0;
-	v2.var[1] = 1.0;
-	v2.var[2] = 0.0;
-
-	v1.x = 480;
-	v1.y = 300;
-	v1.var[0] = 0.0;
-	v1.var[1] = 0.0;
-	v1.var[2] = 1.0;
-
-	for (int i = 0; i < 500000; ++i)
-	{
-		Vertex v0 = randomVertex();
-		Vertex v1 = randomVertex();
-		Vertex v2 = randomVertex();
-
-		r.drawTriangle(v0, v1, v2);
-	}
-
-	r.drawTriangle(v0, v1, v2);
-	*/
-	/*Vertex v0, v1;
-
-	v0.x = 150;
-	v0.y = 100;
-	v0.var[0] = 1.0;
-	v0.var[1] = 0.0;
-	v0.var[2] = 0.0;
-
-	v1.x = 200;
-	v1.y = 300;
-	v1.var[0] = 0.0;
-	v1.var[1] = 0.0;
-	v1.var[2] = 1.0;
-
-	r.drawLine(v0, v1);*/
-	
 	Uint32 end = SDL_GetTicks();
 	printf("%i\n", end - start);
+}
+
+void drawLines(SDL_Surface *screen)
+{
+	Rasterizer r;
+	VertexProcessor v(&r);
+
+	r.setScissorRect(0, 0, 640, 480);
+	r.setPixelShader<PixelShader>();
+	PixelShader::surface = screen;
+
+	v.setViewport(100, 100, 640 - 200, 480 - 200);
+	v.setCullMode(CullMode::None);
+	v.setVertexShader<VertexShader>();
+
+	VertexData vdata[2];
+	int idata[2];
+
+	vdata[0].x = -2.0f;
+	vdata[0].y = -3.0f;
+	vdata[0].z = -4.0f;
+	vdata[0].r = 1.0f;
+	vdata[0].g = 0.0f;
+	vdata[0].b = 0.0f;
+
+	vdata[1].x = 3.0f;
+	vdata[1].y = 2.0f;
+	vdata[1].z = 4.0f;
+	vdata[1].r = 0.0f;
+	vdata[1].g = 1.0f;
+	vdata[1].b = 0.0f;
+
+	idata[0] = 0;
+	idata[1] = 1;
+	
+	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
+	v.drawElements(DrawMode::Line, 2, idata);
+}
+
+int main(int argc, char *argv[])
+{
+	SDL_Init(SDL_INIT_VIDEO);
+
+	SDL_Window *window = SDL_CreateWindow(
+		"Software Renderer",
+		SDL_WINDOWPOS_UNDEFINED, 
+		SDL_WINDOWPOS_UNDEFINED,
+		640, 
+		480,
+		0
+	);
+
+	SDL_Surface *screen = SDL_GetWindowSurface(window);
+
+	srand(1234);
+
+	//drawTriangles(screen);
+	drawLines(screen);
 
 	SDL_UpdateWindowSurface(window);
-
 	SDL_Delay(3000);
-
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
