@@ -259,7 +259,7 @@ public:
 			VertexShaderInput vIn;    
 			initVertexInput(vIn, index);
 
-			m_indicesOut.push_back(index);
+			m_indicesOut.push_back((int)m_verticesOut.size());
 			m_verticesOut.resize(m_verticesOut.size() + 1);
 			VertexShaderOutput &vOut = m_verticesOut.back();
 
