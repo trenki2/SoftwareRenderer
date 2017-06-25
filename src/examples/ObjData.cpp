@@ -1,4 +1,4 @@
-#include "objdata.h"
+#include "ObjData.h"
 
 #include <fstream>
 #include <string>
@@ -13,7 +13,7 @@ typedef vmath::vec3<float> vec3f;
 typedef vmath::vec2<float> vec2f;
 
 // string is supposed to be in the form <vertex_index>/<texture_index>/<normal_index>, 
-void extract_indices_from_string(string str, unsigned &vi, unsigned &ni, unsigned &ti)
+void getIndicesFromString(string str, unsigned &vi, unsigned &ni, unsigned &ti)
 {
 	string v;
 	string t;
@@ -82,7 +82,7 @@ ObjData ObjData::loadFromFile(const char *filename)
 				if (word == "") continue;
 				
 				ObjData::VertexRef vr;
-				extract_indices_from_string(word, vr.vertexIndex, vr.normalIndex, vr.texcoordIndex);
+				getIndicesFromString(word, vr.vertexIndex, vr.normalIndex, vr.texcoordIndex);
 
 				face.push_back(vr);
 			}
