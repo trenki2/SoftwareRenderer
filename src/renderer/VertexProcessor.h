@@ -82,7 +82,7 @@ public:
 		result.y = v0.y * (1.0f - t) + v1.y * t;
 		result.z = v0.z * (1.0f - t) + v1.z * t;
 		result.w = v0.w * (1.0f - t) + v1.w * t;
-		for (int i = 0; i < m_attribCount; ++i)
+		for (int i = 0; i < attribCount; ++i)
 			result.var[i] = v0.var[i] * (1.0f - t) + v1.var[i] * t;
 
 		return result;
@@ -147,18 +147,18 @@ public:
 
 			if (sgn(dp) != sgn(dpPrev))
 			{
-				float t = dp < 0 ? -dp / (dpPrev - dp) : dp / (dp - dpPrev);
+				float t = dp < 0 ? dpPrev / (dpPrev - dp) : -dpPrev / (dp - dpPrev);
 
-				VertexShaderOutput vOut = Helper::interpolateVertex(*vPrev, *v, t, m_attribCount);
+				VertexShaderOutput vOut = Helper::interpolateVertex((*m_vertices)[idxPrev], (*m_vertices)[idx], t, m_attribCount);
 				m_vertices->push_back(vOut);
-				m_indicesOut->push_back(m_vertices->size() - 1);
+				m_indicesOut->push_back((int)(m_vertices->size() - 1));
 			}
 
 			idxPrev = idx;
 			dpPrev = dp;
 		}
 
-		m_indicesIn = m_indicesOut;
+		std::swap(m_indicesIn, m_indicesOut);
 	}
 
 	std::vector<int> &indices() const
@@ -197,7 +197,8 @@ public:
 	VertexProcessor(IRasterizer *rasterizer)
 	{
 		setRasterizer(rasterizer);
-		setCullMode(CullMode::CCW);
+		setCullMode(CullMode::CW);
+		setDepthRange(0.0f, 1.0f);
 		setVertexShader<DummyVertexShader>();
 	}
 
@@ -213,6 +214,11 @@ public:
 		m_viewport.y = y;
 		m_viewport.width = width;
 		m_viewport.height = height;
+
+		m_viewport.px = width / 2.0f;
+		m_viewport.py = height / 2.0f;
+		m_viewport.ox = (x + m_viewport.px);
+		m_viewport.oy = (y + m_viewport.py);
 	}
 
 	void setDepthRange(float n, float f)
@@ -373,15 +379,15 @@ private:
 
 	void clipTriangles() const
 	{
-		return;
-
 		m_clipMask.clear();
 		m_clipMask.resize(m_verticesOut.size());
 
 		for (size_t i = 0; i < m_verticesOut.size(); i++)
 			m_clipMask[i] = clipMask(m_verticesOut[i]);
 
-		for (size_t i = 0; i < m_indicesOut.size(); i += 3)
+		size_t n = m_indicesOut.size();
+
+		for (size_t i = 0; i < n; i += 3)
 		{
 			int i0 = m_indicesOut[i];
 			int i1 = m_indicesOut[i + 1];
@@ -440,6 +446,7 @@ private:
 		switch (mode)
 		{
 			case DrawMode::Triangle:
+				cullTriangles();
 				m_rasterizer->drawTriangleList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
 				break;
 			case DrawMode::Line:
@@ -448,6 +455,34 @@ private:
 			case DrawMode::Point:
 				m_rasterizer->drawPointList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
 				break;
+		}
+	}
+
+	void cullTriangles() const
+	{
+		for (size_t i = 0; i + 3 <= m_indicesOut.size(); i += 3)
+		{
+			if (m_indicesOut[i] == -1)
+				continue;
+
+			VertexShaderOutput &v0 = m_verticesOut[m_indicesOut[i]];
+			VertexShaderOutput &v1 = m_verticesOut[m_indicesOut[i + 1]];
+			VertexShaderOutput &v2 = m_verticesOut[m_indicesOut[i + 2]];
+
+			float facing = (v0.x - v1.x) * (v2.y - v1.y) - (v2.x - v1.x) * (v0.y - v1.y);
+
+			if (facing < 0)
+			{
+				if (m_cullMode == CullMode::CW)
+					m_indicesOut[i] = m_indicesOut[i + 1] = m_indicesOut[i + 2] = -1;
+			}
+			else
+			{
+				if (m_cullMode == CullMode::CCW)
+					m_indicesOut[i] = m_indicesOut[i + 1] = m_indicesOut[i + 2] = -1;
+				else
+					std::swap(m_indicesOut[i], m_indicesOut[i + 2]);
+			}
 		}
 	}
 
@@ -475,8 +510,8 @@ private:
 			vOut.z *= invW;
 
 			// Viewport transform
-			vOut.x = (0.5f * m_viewport.width * vOut.x + m_viewport.x);
-			vOut.y = (0.5f * m_viewport.height * -vOut.y + m_viewport.y);
+			vOut.x = (m_viewport.px * vOut.x + m_viewport.ox);
+			vOut.y = (m_viewport.py * -vOut.y + m_viewport.oy);
 			vOut.z = 0.5f * (m_depthRange.f - m_depthRange.n) * vOut.z + 0.5f * (m_depthRange.n + m_depthRange.f);
 
 			m_alreadyProcessed[index] = true;
@@ -486,6 +521,7 @@ private:
 private:
 	struct {
 		int x, y, width, height;
+		float px, py, ox, oy;
 	} m_viewport;
 
 	struct {
