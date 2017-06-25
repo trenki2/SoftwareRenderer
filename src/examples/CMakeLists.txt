@@ -9,3 +9,6 @@ include_directories(SoftwareRenderer ${SDL2_INCLUDE_DIRS})
 
 add_executable(RasterizerTest RasterizerTest.cpp)
 target_link_libraries(RasterizerTest ${SDL2_LIBRARIES})
+
+add_executable(VertexProcessorTest VertexProcessorTest.cpp)
+target_link_libraries(VertexProcessorTest ${SDL2_LIBRARIES})
