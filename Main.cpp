@@ -43,7 +43,7 @@ struct VertexData {
 
 class VertexShader : public VertexShaderBase<VertexShader> {
 public:
-	static const int AttribCount = 1;
+	static const int AttribCount = 3;
 
 	static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
 	{
@@ -97,7 +97,7 @@ void drawLines(SDL_Surface *screen)
 	v.drawElements(DrawMode::Line, 2, idata);
 }
 
-void drawTriangles(SDL_Surface *s)
+void drawTriangle(SDL_Surface *s)
 {
 	Rasterizer r;
 	VertexProcessor v(&r);
@@ -107,7 +107,7 @@ void drawTriangles(SDL_Surface *s)
 	PixelShader::surface = s;
 
 	v.setViewport(100, 100, 640 - 200, 480 - 200);
-	v.setCullMode(CullMode::None);
+	v.setCullMode(CullMode::CW);
 	v.setVertexShader<VertexShader>();
 
 	VertexData vdata[3];
@@ -123,9 +123,54 @@ void drawTriangles(SDL_Surface *s)
 	vdata[1].y = -0.5f;
 	vdata[1].z = 0.0f;
 	vdata[1].r = 0.0f;
-	vdata[1].g = 1.0f;
+	vdata[1].g = 0.0f;
 	vdata[1].b = 0.0f;
 	
+	vdata[2].x = 0.5f;
+	vdata[2].y = -0.5f;
+	vdata[2].z = 0.0f;
+	vdata[2].r = 0.0f;
+	vdata[2].g = 0.0f;
+	vdata[2].b = 0.0f;
+
+	int idata[3];
+	idata[0] = 0;
+	idata[1] = 1;
+	idata[2] = 2;
+
+	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
+	v.drawElements(DrawMode::Triangle, 3, idata);
+}
+
+void drawTriangleClip(SDL_Surface *s)
+{
+	Rasterizer r;
+	VertexProcessor v(&r);
+
+	r.setScissorRect(0, 0, 640, 480);
+	r.setPixelShader<PixelShader>();
+	PixelShader::surface = s;
+
+	v.setViewport(100, 100, 640 - 200, 480 - 200);
+	v.setCullMode(CullMode::CW);
+	v.setVertexShader<VertexShader>();
+
+	VertexData vdata[3];
+
+	vdata[0].x = 0.0f;
+	vdata[0].y = 0.5f;
+	vdata[0].z = 0.0f;
+	vdata[0].r = 1.0f;
+	vdata[0].g = 0.0f;
+	vdata[0].b = 0.0f;
+
+	vdata[1].x = -1.5f;
+	vdata[1].y = -0.5f;
+	vdata[1].z = 0.0f;
+	vdata[1].r = 0.0f;
+	vdata[1].g = 1.0f;
+	vdata[1].b = 0.0f;
+
 	vdata[2].x = 0.5f;
 	vdata[2].y = -0.5f;
 	vdata[2].z = 0.0f;
@@ -140,6 +185,52 @@ void drawTriangles(SDL_Surface *s)
 
 	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
 	v.drawElements(DrawMode::Triangle, 3, idata);
+}
+
+VertexData randomVertexData()
+{
+	VertexData r;
+
+	r.x = float(rand()) / RAND_MAX * 4.0f - 2.0f;
+	r.y = float(rand()) / RAND_MAX * 4.0f - 2.0f;
+	r.y = float(rand()) / RAND_MAX * 4.0f - 2.0f;
+
+	r.r = float(rand()) / RAND_MAX;
+	r.g = float(rand()) / RAND_MAX;
+	r.b = float(rand()) / RAND_MAX;
+
+	return r;
+}
+
+void drawManyTriangles(SDL_Surface *s)
+{
+	Rasterizer r;
+	VertexProcessor v(&r);
+
+	r.setScissorRect(0, 0, 640, 480);
+	r.setPixelShader<PixelShader>();
+	PixelShader::surface = s;
+
+	v.setViewport(100, 100, 640 - 200, 480 - 200);
+	v.setCullMode(CullMode::None);
+	v.setVertexShader<VertexShader>();
+
+	for (size_t i = 0; i < 10000; i++)
+	{
+		VertexData vdata[3];
+
+		vdata[0] = randomVertexData();
+		vdata[1] = randomVertexData();
+		vdata[2] = randomVertexData();
+
+		int idata[3];
+		idata[0] = 0;
+		idata[1] = 1;
+		idata[2] = 2;
+
+		v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
+		v.drawElements(DrawMode::Triangle, 3, idata);
+	}
 }
 
 int main(int argc, char *argv[])
@@ -159,11 +250,15 @@ int main(int argc, char *argv[])
 
 	srand(1234);
 
-	drawTriangles(screen);
+	//drawManyTriangles(screen);
+	drawTriangle(screen);
 	//drawLines(screen);
 
 	SDL_UpdateWindowSurface(window);
-	SDL_Delay(3000);
+
+	SDL_Event e;
+	while (SDL_WaitEvent(&e) && e.type != SDL_QUIT);
+	
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
