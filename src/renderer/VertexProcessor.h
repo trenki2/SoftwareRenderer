@@ -252,6 +252,9 @@ public:
 		m_verticesOut.clear();
 		m_indicesOut.clear();
 
+		// TODO: Use vertex cache.
+		// TODO: Max 1024 primitives per batch.
+
 		for (size_t i = 0; i < count; i++)
 		{
 			int index = indices[i];
