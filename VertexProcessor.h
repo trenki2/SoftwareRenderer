@@ -78,13 +78,13 @@ public:
 	{
 		VertexShaderOutput result;
 		
-		result.x = v0.x * t + v1.x * (1.0f - t);
-		result.y = v0.y * t + v1.y * (1.0f - t);
-		result.z = v0.z * t + v1.z * (1.0f - t);
-		result.w = v0.w * t + v1.w * (1.0f - t);
-		for (int i = 0; i < attribCount; ++i)
-			result.var[i] = v0.var[i] * t + v1.var[i] * (1.0f - t);
-		
+		result.x = v0.x * (1.0f - t) + v1.x * t;
+		result.y = v0.y * (1.0f - t) + v1.y * t;
+		result.z = v0.z * (1.0f - t) + v1.z * t;
+		result.w = v0.w * (1.0f - t) + v1.w * t;
+		for (int i = 0; i < m_attribCount; ++i)
+			result.var[i] = v0.var[i] * (1.0f - t) + v1.var[i] * t;
+
 		return result;
 	}
 };
@@ -359,14 +359,14 @@ private:
 			{
 				VertexShaderOutput newV = Helper::interpolateVertex(v0, v1, lineClipper.t0, m_attribCount);
 				m_verticesOut.push_back(newV);
-				m_indicesOut[i] = m_verticesOut.size() - 1;
+				m_indicesOut[i] = (int)(m_verticesOut.size() - 1);
 			}
 
 			if (m_clipMask[index1])
 			{
 				VertexShaderOutput newV = Helper::interpolateVertex(v0, v1, lineClipper.t1, m_attribCount);
 				m_verticesOut.push_back(newV);
-				m_indicesOut[i + 1] = m_verticesOut.size() - 1;
+				m_indicesOut[i + 1] = (int)(m_verticesOut.size() - 1);
 			}
 		}
 	}
