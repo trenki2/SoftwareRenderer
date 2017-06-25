@@ -127,9 +127,9 @@ struct TriangleEquations {
 
 	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2, int varCount)
 	{
-		e0.init(v0, v1);
-		e1.init(v1, v2);
-		e2.init(v2, v0);
+		e0.init(v1, v2);
+		e1.init(v2, v0);
+		e2.init(v0, v1);
 
 		area2 = e0.c + e1.c + e2.c;
 

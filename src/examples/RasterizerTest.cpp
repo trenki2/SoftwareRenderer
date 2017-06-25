@@ -37,21 +37,21 @@ void drawTriangle(SDL_Surface *screen)
 	
 	v0.x = 320;
 	v0.y = 100;
-	v0.var[0] = 0.0f;
+	v0.var[0] = 1.0f;
 	v0.var[1] = 0.0f;
 	v0.var[2] = 0.0f;
 
 	v1.x = 480;
 	v1.y = 200;
-	v1.var[0] = 1.0f;
-	v1.var[1] = 0.0f;
+	v1.var[0] = 0.0f;
+	v1.var[1] = 1.0f;
 	v1.var[2] = 0.0f;
 
 	v2.x = 120;
 	v2.y = 300;
-	v2.var[0] = 1.0f;
+	v2.var[0] = 0.0f;
 	v2.var[1] = 0.0f;
-	v2.var[2] = 0.0f;
+	v2.var[2] = 1.0f;
 
 	r.drawTriangle(v0, v1, v2);
 }
