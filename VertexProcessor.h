@@ -72,6 +72,112 @@ public:
 	}
 };
 
+class Helper {
+public:
+	static VertexShaderOutput interpolateVertex(const VertexShaderOutput &v0, const VertexShaderOutput &v1, float t, int attribCount)
+	{
+		VertexShaderOutput result;
+		
+		result.x = v0.x * t + v1.x * (1.0f - t);
+		result.y = v0.y * t + v1.y * (1.0f - t);
+		result.z = v0.z * t + v1.z * (1.0f - t);
+		result.w = v0.w * t + v1.w * (1.0f - t);
+		for (int i = 0; i < attribCount; ++i)
+			result.var[i] = v0.var[i] * t + v1.var[i] * (1.0f - t);
+		
+		return result;
+	}
+};
+
+class PolyClipper {
+private:
+	int m_attribCount;
+	std::vector<int> *m_indicesIn;
+	std::vector<int> *m_indicesOut;
+	std::vector<VertexShaderOutput> *m_vertices;
+	
+public:
+	PolyClipper()
+	{
+		m_indicesIn = new std::vector<int>();
+		m_indicesOut = new std::vector<int>();
+	}
+
+	~PolyClipper()
+	{
+		delete m_indicesIn;
+		delete m_indicesOut;
+	}
+
+	void init(std::vector<VertexShaderOutput> *vertices, int i1, int i2, int i3, int attribCount)
+	{
+		m_attribCount = attribCount;
+		m_vertices = vertices;
+
+		m_indicesIn->clear();
+		m_indicesOut->clear();
+		
+		m_indicesIn->push_back(i1);
+		m_indicesIn->push_back(i2);
+		m_indicesIn->push_back(i3);
+	}
+
+	/// Clip the poly to the plane given by the formula a * x + b * y + c * z + d * w.
+	void clipToPlane(float a, float b, float c, float d)
+	{
+		if (fullyClipped())
+			return;
+
+		m_indicesOut->clear();
+
+		int idxPrev = (*m_indicesIn)[0];
+		m_indicesIn->push_back(idxPrev);
+
+		VertexShaderOutput *vPrev = &(*m_vertices)[idxPrev];
+		float dpPrev = a * vPrev->x + b * vPrev->y + c * vPrev->z + d * vPrev->w;
+
+		for (size_t i = 1; i < m_indicesIn->size(); ++i)
+		{
+			int idx = (*m_indicesIn)[i];
+			VertexShaderOutput *v = &(*m_vertices)[idx];
+			float dp = a * v->x + b * v->y + c * v->z + d * v->w;
+
+			if (dpPrev >= 0)
+				m_indicesOut->push_back(idxPrev);
+
+			if (sgn(dp) != sgn(dpPrev))
+			{
+				float t = dp < 0 ? -dp / (dpPrev - dp) : dp / (dp - dpPrev);
+
+				VertexShaderOutput vOut = Helper::interpolateVertex(*vPrev, *v, t, m_attribCount);
+				m_vertices->push_back(vOut);
+				m_indicesOut->push_back(m_vertices->size() - 1);
+			}
+
+			idxPrev = idx;
+			dpPrev = dp;
+		}
+
+		m_indicesIn = m_indicesOut;
+	}
+
+	std::vector<int> &indices() const
+	{
+		return *m_indicesIn;
+	}
+
+	bool fullyClipped() const
+	{
+		return m_indicesIn->size() < 3;
+	}
+
+private:
+	template <typename T> int sgn(T val) 
+	{
+    	return (T(0) < val) - (val < T(0));
+	}
+};
+
 template <class Derived>
 class VertexShaderBase {
 public:
@@ -251,14 +357,14 @@ private:
 
 			if (m_clipMask[index0])
 			{
-				VertexShaderOutput newV = interpolateVertex(v0, v1, lineClipper.t0);
+				VertexShaderOutput newV = Helper::interpolateVertex(v0, v1, lineClipper.t0, m_attribCount);
 				m_verticesOut.push_back(newV);
 				m_indicesOut[i] = m_verticesOut.size() - 1;
 			}
 
 			if (m_clipMask[index1])
 			{
-				VertexShaderOutput newV = interpolateVertex(v0, v1, lineClipper.t1);
+				VertexShaderOutput newV = Helper::interpolateVertex(v0, v1, lineClipper.t1, m_attribCount);
 				m_verticesOut.push_back(newV);
 				m_indicesOut[i + 1] = m_verticesOut.size() - 1;
 			}
@@ -267,7 +373,50 @@ private:
 
 	void clipTriangles() const
 	{
-		// TODO:
+		return;
+
+		m_clipMask.clear();
+		m_clipMask.resize(m_verticesOut.size());
+
+		for (size_t i = 0; i < m_verticesOut.size(); i++)
+			m_clipMask[i] = clipMask(m_verticesOut[i]);
+
+		for (size_t i = 0; i < m_indicesOut.size(); i += 3)
+		{
+			int i0 = m_indicesOut[i];
+			int i1 = m_indicesOut[i + 1];
+			int i2 = m_indicesOut[i + 2];
+
+			int clipMask = m_clipMask[i0] | m_clipMask[i1] | m_clipMask[i2];
+
+			polyClipper.init(&m_verticesOut, i0, i1, i2, m_attribCount);
+
+			if (clipMask & ClipMask::PosX) polyClipper.clipToPlane(-1, 0, 0, 1);
+			if (clipMask & ClipMask::NegX) polyClipper.clipToPlane( 1, 0, 0, 1);
+			if (clipMask & ClipMask::PosY) polyClipper.clipToPlane( 0,-1, 0, 1);
+			if (clipMask & ClipMask::NegY) polyClipper.clipToPlane( 0, 1, 0, 1);
+			if (clipMask & ClipMask::PosZ) polyClipper.clipToPlane( 0, 0,-1, 1);
+			if (clipMask & ClipMask::NegZ) polyClipper.clipToPlane( 0, 0, 1, 1);
+
+			if (polyClipper.fullyClipped())
+			{
+				m_indicesOut[i] = -1;
+				m_indicesOut[i + 1] = -1;
+				m_indicesOut[i + 2] = -1;
+				continue;
+			}
+
+			std::vector<int> &indices = polyClipper.indices();
+
+			m_indicesOut[i] = indices[0];
+			m_indicesOut[i + 1] = indices[1];
+			m_indicesOut[i + 2] = indices[2];
+			for (size_t idx = 3; idx < indices.size(); ++idx) {
+				m_indicesOut.push_back(indices[0]);
+				m_indicesOut.push_back(indices[idx - 1]);
+				m_indicesOut.push_back(indices[idx]);
+			}
+		}
 	}
 
 	void clipPrimitives(DrawMode mode) const
@@ -300,20 +449,6 @@ private:
 				m_rasterizer->drawPointList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
 				break;
 		}
-	}
-
-	VertexShaderOutput interpolateVertex(const VertexShaderOutput &v0, const VertexShaderOutput &v1, float t) const
-	{
-		VertexShaderOutput result;
-		
-		result.x = v0.x * t + v1.x * (1.0f - t);
-		result.y = v0.y * t + v1.y * (1.0f - t);
-		result.z = v0.z * t + v1.z * (1.0f - t);
-		result.w = v0.w * t + v1.w * (1.0f - t);
-		for (int i = 0; i < m_attribCount; ++i)
-			result.var[i] = v0.var[i] * t + v1.var[i] * (1.0f - t);
-		
-		return result;
 	}
 
 	void transformVertices() const
@@ -369,6 +504,7 @@ private:
 	} m_attributes[MaxVertexAttribs];
 
 	// Some temporary variables for speed
+	mutable PolyClipper polyClipper;
 	mutable std::vector<VertexShaderOutput> m_verticesOut;
 	mutable std::vector<int> m_indicesOut;
 	mutable std::vector<int> m_clipMask;

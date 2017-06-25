@@ -60,83 +60,6 @@ public:
 
 SDL_Surface* PixelShader::surface;
 
-
-VertexData randomVertexData()
-{
-	VertexData v;
-	
-	v.x = (float)(rand() % 640);
-	v.y = (float)(rand() % 480);
-	v.z = 0;
-
-	v.r = (float)rand() / RAND_MAX;
-	v.g = (float)rand() / RAND_MAX;
-	v.b = (float)rand() / RAND_MAX;
-
-	return v;
-}
-
-void drawTriangles(SDL_Surface *screen)
-{
-	VertexData vdata[3];
-	
-	vdata[0].x = 320;
-	vdata[0].y = 100;
-	vdata[0].r = 1.0;
-	vdata[0].g = 0.0;
-	vdata[0].b = 0.0;
-
-	vdata[1].x = 480;
-	vdata[1].y = 300;
-	vdata[1].r = 0.0;
-	vdata[1].g = 0.0;
-	vdata[1].b = 1.0;
-
-	vdata[2].x = 180;
-	vdata[2].y = 200;
-	vdata[2].r = 0.0;
-	vdata[2].g = 1.0;
-	vdata[2].b = 0.0;
-
-	int idata[3];
-	idata[0] = 0;
-	idata[1] = 1;
-	idata[2] = 2;
-
-	Rasterizer r;
-	VertexProcessor v(&r);
-
-	r.setScissorRect(0, 0, 640, 480);
-	r.setPixelShader<PixelShader>();
-	PixelShader::surface = screen;
-
-	v.setViewport(0, 0, 640, 480);
-	v.setCullMode(CullMode::None);
-	v.setVertexShader<VertexShader>();
-	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
-
-	int count = 500000;
-
-	std::vector<int> idata2(count);
-	std::vector<VertexData> vdata2(count);
-
-	for (int i = 0; i < count; i++)
-	{
-		idata2[i] = i;
-		vdata2[i] = randomVertexData();
-	}
-
-	Uint32 start = SDL_GetTicks();
-
-	v.drawElements(DrawMode::Triangle, 3, idata);
-
-	v.setVertexAttribPointer(0, sizeof(VertexData), &vdata2[0]);
-	v.drawElements(DrawMode::Triangle, idata2.size(), &idata2[0]);
-
-	Uint32 end = SDL_GetTicks();
-	printf("%i\n", end - start);
-}
-
 void drawLines(SDL_Surface *screen)
 {
 	Rasterizer r;
@@ -174,6 +97,51 @@ void drawLines(SDL_Surface *screen)
 	v.drawElements(DrawMode::Line, 2, idata);
 }
 
+void drawTriangles(SDL_Surface *s)
+{
+	Rasterizer r;
+	VertexProcessor v(&r);
+
+	r.setScissorRect(0, 0, 640, 480);
+	r.setPixelShader<PixelShader>();
+	PixelShader::surface = s;
+
+	v.setViewport(100, 100, 640 - 200, 480 - 200);
+	v.setCullMode(CullMode::None);
+	v.setVertexShader<VertexShader>();
+
+	VertexData vdata[3];
+
+	vdata[0].x = 0.0f;
+	vdata[0].y = 0.5f;
+	vdata[0].z = 0.0f;
+	vdata[0].r = 1.0f;
+	vdata[0].g = 0.0f;
+	vdata[0].b = 0.0f;
+
+	vdata[1].x = -0.5f;
+	vdata[1].y = -0.5f;
+	vdata[1].z = 0.0f;
+	vdata[1].r = 0.0f;
+	vdata[1].g = 1.0f;
+	vdata[1].b = 0.0f;
+	
+	vdata[2].x = 0.5f;
+	vdata[2].y = -0.5f;
+	vdata[2].z = 0.0f;
+	vdata[2].r = 0.0f;
+	vdata[2].g = 0.0f;
+	vdata[2].b = 1.0f;
+
+	int idata[3];
+	idata[0] = 0;
+	idata[1] = 1;
+	idata[2] = 2;
+
+	v.setVertexAttribPointer(0, sizeof(VertexData), vdata);
+	v.drawElements(DrawMode::Triangle, 3, idata);
+}
+
 int main(int argc, char *argv[])
 {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -191,8 +159,8 @@ int main(int argc, char *argv[])
 
 	srand(1234);
 
-	//drawTriangles(screen);
-	drawLines(screen);
+	drawTriangles(screen);
+	//drawLines(screen);
 
 	SDL_UpdateWindowSurface(window);
 	SDL_Delay(3000);
