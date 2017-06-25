@@ -520,7 +520,7 @@ private:
 		minY = minY & ~(BlockSize - 1);
 		maxY = maxY & ~(BlockSize - 1);
 
-		float s = (float)BlockSize - 1;
+		float s = BlockSize - 1;
 
 		int stepsX = (maxX - minX) / BlockSize + 1;
 		int stepsY = (maxY - minY) / BlockSize + 1;
@@ -546,16 +546,27 @@ private:
 
 			int result = e00.test(eqn) + e01.test(eqn) + e10.test(eqn) + e11.test(eqn);
 
-			// All out.
+			// Potentially all out
 			if (result == 0)
-				continue;
-
-			if (result == 4)
+			{
+				bool v0In = v0.x >= xf && v0.x < xf + s && v0.y >= yf && v0.y < yf + s;
+				bool v1In = v1.x >= xf && v1.x < xf + s && v1.y >= yf && v1.y < yf + s;
+				bool v2In = v2.x >= xf && v2.x < xf + s && v2.y >= yf && v2.y < yf + s;
+				
+				// Check for special case.
+				if (v0In || v1In || v2In)
+				 	PixelShader::template drawBlock<true>(eqn, x, y);
+			}
+			else if (result == 4)
+			{
 				// Fully Covered
 				PixelShader::template drawBlock<false>(eqn, x, y);
+			}
 			else
+			{
 				// Partially Covered
 				PixelShader::template drawBlock<true>(eqn, x, y);
+			}
 		}
 	}
 
