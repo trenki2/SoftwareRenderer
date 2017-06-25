@@ -12,3 +12,6 @@ target_link_libraries(RasterizerTest ${SDL2_LIBRARIES})
 
 add_executable(VertexProcessorTest VertexProcessorTest.cpp)
 target_link_libraries(VertexProcessorTest ${SDL2_LIBRARIES})
+
+add_executable(Crate Crate.cpp ObjData.cpp ObjData.h)
+target_link_libraries(Crate ${SDL2_LIBRARIES})
