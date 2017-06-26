@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	Rasterizer r;
 	VertexProcessor v(&r);
 	
-	r.setRasterMode(RasterMode::Block);
+	r.setRasterMode(RasterMode::Span);
 	r.setScissorRect(0, 0, 640, 480);
 	r.setPixelShader<PixelShader>();
 	PixelShader::surface = screen;

@@ -634,9 +634,9 @@ private:
 		#pragma omp parallel for
 		for (int scanlineY = (int)v0.y; scanlineY <= (int)v1.y; scanlineY++)
 		{
-			float dy = (scanlineY - v0.y);
-			float curx1 = v0.x + invslope1 * dy;
-			float curx2 = v0.x + invslope2 * dy;
+			float dy = (scanlineY - v0.y) + 0.5f;
+			float curx1 = v0.x + invslope1 * dy + 0.5f;
+			float curx2 = v0.x + invslope2 * dy + 0.5f;
 
 			// Clip to scissor rect
 			int xl = std::max(m_minX, (int)curx1);
@@ -661,9 +661,9 @@ private:
 		#pragma omp parallel for
 		for (int scanlineY = (int)v2.y; scanlineY > (int)v0.y; scanlineY--)
 		{
-			float dy = (scanlineY - v2.y);
-			float curx1 = v2.x + invslope1 * dy;
-			float curx2 = v2.x + invslope2 * dy;
+			float dy = (scanlineY - v2.y) + 0.5f;
+			float curx1 = v2.x + invslope1 * dy + 0.5f;
+			float curx2 = v2.x + invslope2 * dy + 0.5f;
 
 			// Clip to scissor rect
 			int xl = std::max(m_minX, (int)curx1);
