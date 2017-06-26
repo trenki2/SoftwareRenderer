@@ -1,4 +1,5 @@
 #include "SDL.h"
+#include "SDL_image.h"
 #include "Rasterizer.h"
 #include "VertexProcessor.h"
 #include "ObjData.h"
@@ -21,14 +22,13 @@ public:
 
 	static void drawPixel(const PixelData &p)
 	{
-		int rint = (int)(p.var[0] * 255);
-		int gint = (int)(p.var[1] * 255);
-		int bint = (int)(p.var[2] * 255);
+		int tx = std::max(0, int(p.var[0] * 255)) % 255;
+		int ty = std::max(0, int(p.var[1] * 255)) % 255;
 
-		Uint32 color = rint << 16 | gint << 8 | bint;
+		Uint32 *texBuffer = (Uint32*)((Uint8 *)texture->pixels + (int)ty * texture->pitch + (int)tx * 4);
+		Uint32 *screenBuffer = (Uint32*)((Uint8 *)surface->pixels + (int)p.y * surface->pitch + (int)p.x * 4);
 
-		Uint32 *buffer = (Uint32*)((Uint8 *)surface->pixels + (int)p.y * surface->pitch + (int)p.x * 4);
-		*buffer = color;
+		*screenBuffer = *texBuffer;
 	}
 };
 
@@ -72,11 +72,15 @@ int main(int argc, char *argv[])
 	);
 
 	SDL_Surface *screen = SDL_GetWindowSurface(window);
+	SDL_Surface *tmp = IMG_Load("data/box.png");
+	SDL_Surface *texture = SDL_ConvertSurface(tmp, screen->format, 0);
+	SDL_FreeSurface(tmp);
+
 	srand(1234);
 
 	std::vector<ObjData::VertexArrayData> vdata;
 	std::vector<int> idata;
-	ObjData::loadFromFile("data/crate.obj").toVertexArray(vdata, idata);
+	ObjData::loadFromFile("data/box.obj").toVertexArray(vdata, idata);
 
 	Rasterizer r;
 	VertexProcessor v(&r);
@@ -85,6 +89,7 @@ int main(int argc, char *argv[])
 	r.setScissorRect(0, 0, 640, 480);
 	r.setPixelShader<PixelShader>();
 	PixelShader::surface = screen;
+	PixelShader::texture = texture;
 
 	v.setViewport(0, 0, 640, 480);
 	v.setCullMode(CullMode::CW);
@@ -102,6 +107,7 @@ int main(int argc, char *argv[])
 	SDL_Event e;
 	while (SDL_WaitEvent(&e) && e.type != SDL_QUIT);
 
+	SDL_FreeSurface(texture);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
