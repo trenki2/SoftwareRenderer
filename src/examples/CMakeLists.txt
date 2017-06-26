@@ -11,9 +11,7 @@ if (OPENMP_FOUND)
 endif ()
 
 find_package(SDL2 REQUIRED)
-
-include(FindPkgConfig)
-PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
+find_package(SDL2_image REQUIRED)
 
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUDE_DIRS})
 
