@@ -632,7 +632,7 @@ private:
 		//float curx2 = v0.x;
 
 		#pragma omp parallel for
-		for (int scanlineY = (int)v0.y; scanlineY <= (int)v1.y; scanlineY++)
+		for (int scanlineY = int(v0.y + 0.5f); scanlineY < int(v1.y + 0.5f); scanlineY++)
 		{
 			float dy = (scanlineY - v0.y) + 0.5f;
 			float curx1 = v0.x + invslope1 * dy + 0.5f;
@@ -659,7 +659,7 @@ private:
 		// float curx2 = v2.x;
 
 		#pragma omp parallel for
-		for (int scanlineY = (int)v2.y; scanlineY > (int)v0.y; scanlineY--)
+		for (int scanlineY = int(v2.y - 0.5f); scanlineY > int(v0.y - 0.5f); scanlineY--)
 		{
 			float dy = (scanlineY - v2.y) + 0.5f;
 			float curx1 = v2.x + invslope1 * dy + 0.5f;
