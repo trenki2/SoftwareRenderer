@@ -122,7 +122,7 @@ struct TriangleEquations {
 	EdgeEquation e2;
 
 	ParameterEquation z;
-	ParameterEquation w;
+	ParameterEquation invw;
 	ParameterEquation var[MaxVar];
 
 	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2, int varCount)
@@ -139,7 +139,7 @@ struct TriangleEquations {
 		
 		float factor = 1.0f / area2;
 		z.init(v0.z, v1.z, v2.z, e0, e1, e2, factor);
-		w.init(v0.w, v1.w, v2.w, e0, e1, e2, factor);
+		invw.init(1.0f / v0.w, 1.0f / v1.w, 1.0f / v2.w, e0, e1, e2, factor);
 		for (int i = 0; i < varCount; ++i)
 			var[i].init(v0.var[i], v1.var[i], v2.var[i], e0, e1, e2, factor);
 	}
@@ -150,7 +150,7 @@ struct PixelData {
 	int y;
 
 	float z;
-	float w;
+	float invw;
 
 	float var[MaxVar];
 
@@ -160,7 +160,7 @@ struct PixelData {
 	void init(const TriangleEquations &eqn, float x, float y, int varCount, bool interpolateZ, bool interpolateW)
 	{
 		if (interpolateZ) z = eqn.z.evaluate(x, y);
-		if (interpolateW) w = eqn.w.evaluate(x, y);
+		if (interpolateW) invw = eqn.invw.evaluate(x, y);
 		for (int i = 0; i < varCount; ++i)
 			var[i] = eqn.var[i].evaluate(x, y);
 	}
@@ -169,7 +169,7 @@ struct PixelData {
 	void stepX(const TriangleEquations &eqn, int varCount, bool interpolateZ, bool interpolateW)
 	{
 		if (interpolateZ) z = eqn.z.stepX(z);
-		if (interpolateW) w = eqn.w.stepX(w);
+		if (interpolateW) invw = eqn.invw.stepX(invw);
 		for (int i = 0; i < varCount; ++i)
 			var[i] = eqn.var[i].stepX(var[i]);
 	}
@@ -178,7 +178,7 @@ struct PixelData {
 	void stepY(const TriangleEquations &eqn, int varCount, bool interpolateZ, bool interpolateW)
 	{
 		if (interpolateZ) z = eqn.z.stepY(z);
-		if (interpolateW) w = eqn.w.stepY(w);
+		if (interpolateW) invw = eqn.invw.stepY(invw);
 		for (int i = 0; i < varCount; ++i)
 			var[i] = eqn.var[i].stepY(var[i]);
 	}
@@ -318,7 +318,7 @@ protected:
 	{
 		PixelData pi;
 		if (Derived::InterpolateZ) pi.z = po.z;
-		if (Derived::InterpolateW) pi.w = po.w;
+		if (Derived::InterpolateW) pi.invw = po.invw;
 		for (int i = 0; i < Derived::VarCount; ++i)
 			pi.var[i] = po.var[i];
 		return pi;
@@ -441,7 +441,7 @@ private:
 		p.x = (int)v.x;
 		p.y = (int)v.y;
 		if (PixelShader::InterpolateZ) p.z = v.z;
-		if (PixelShader::InterpolateW) p.w = v.w;
+		if (PixelShader::InterpolateW) p.invw = 1.0f / v.w;
 		for (int i = 0; i < PixelShader::VarCount; ++i)
 			p.var[i] = v.var[i];
 		return p;
