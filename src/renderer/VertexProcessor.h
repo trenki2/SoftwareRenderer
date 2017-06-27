@@ -192,6 +192,42 @@ public:
 
 class DummyVertexShader : public VertexShaderBase<DummyVertexShader> {};
 
+class VertexCache {
+private:
+	static const int VertexCacheSize = 16;
+
+	int inputIndex[VertexCacheSize];
+	int outputIndex[VertexCacheSize];
+
+public:
+	VertexCache()
+	{
+		clear();
+	}
+
+	void clear()
+	{
+		for (size_t i = 0; i < VertexCacheSize; i++)
+			inputIndex[i] = -1;
+	}
+
+	void set(int inIndex, int outIndex)
+	{
+		int cacheIndex = inIndex % VertexCacheSize;
+		inputIndex[cacheIndex] = inIndex;
+		outputIndex[cacheIndex] = outIndex;
+	}
+
+	int lookup(int inIndex) const
+	{
+		int cacheIndex = inIndex % VertexCacheSize;
+		if (inputIndex[cacheIndex] == inIndex)
+			return outputIndex[cacheIndex];
+		else
+			return -1;
+	}
+};
+
 class VertexProcessor {
 public:
 	VertexProcessor(IRasterizer *rasterizer)
@@ -252,26 +288,43 @@ public:
 		m_verticesOut.clear();
 		m_indicesOut.clear();
 
-		// TODO: Use vertex cache.
 		// TODO: Max 1024 primitives per batch.
+		VertexCache vCache;
 
 		for (size_t i = 0; i < count; i++)
 		{
 			int index = indices[i];
+			int outputIndex = vCache.lookup(index);
+			
+			if (outputIndex != -1)
+			{
+				m_indicesOut.push_back(outputIndex);
+			}
+			else
+			{
+				VertexShaderInput vIn;    
+				initVertexInput(vIn, index);
 
-			VertexShaderInput vIn;    
-			initVertexInput(vIn, index);
+				int outputIndex = (int)m_verticesOut.size();
+				m_indicesOut.push_back(outputIndex);
+				m_verticesOut.resize(m_verticesOut.size() + 1);
+				VertexShaderOutput &vOut = m_verticesOut.back();
+				
+				processVertex(vIn, &vOut);
 
-			m_indicesOut.push_back((int)m_verticesOut.size());
-			m_verticesOut.resize(m_verticesOut.size() + 1);
-			VertexShaderOutput &vOut = m_verticesOut.back();
+				vCache.set(index, outputIndex);
+			}
 
-			processVertex(vIn, &vOut);
+			if (primitiveCount(mode) >= 1024)
+			{
+				processPrimitives(mode);
+				m_verticesOut.clear();
+				m_indicesOut.clear();
+				vCache.clear();
+			}
 		}
 
-		clipPrimitives(mode);
-		transformVertices();
-		drawPrimitives(mode);
+		processPrimitives(mode);
 	}
 
 private:
@@ -442,6 +495,27 @@ private:
 				clipTriangles();
 				break;
 		}
+	}
+
+	void processPrimitives(DrawMode mode) const
+	{
+		clipPrimitives(mode);
+		transformVertices();
+		drawPrimitives(mode);
+	}
+
+	int primitiveCount(DrawMode mode) const
+	{
+		int factor;
+		
+		switch (mode)
+		{
+			case DrawMode::Point: factor = 1; break;
+			case DrawMode::Line: factor = 2; break;
+			case DrawMode::Triangle: factor = 3; break;
+		}
+
+		return m_indicesOut.size() / factor;
 	}
 
 	void drawPrimitives(DrawMode mode) const
