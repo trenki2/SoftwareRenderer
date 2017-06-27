@@ -14,9 +14,9 @@ public:
 
 	static void drawPixel(const PixelData &p)
 	{
-		int rint = (int)(p.var[0] * 255);
-		int gint = (int)(p.var[1] * 255);
-		int bint = (int)(p.var[2] * 255);
+		int rint = (int)(p.avar[0] * 255);
+		int gint = (int)(p.avar[1] * 255);
+		int bint = (int)(p.avar[2] * 255);
 		
 		Uint32 color = rint << 16 | gint << 8 | bint;
 
@@ -43,9 +43,9 @@ public:
 		out->y = data->y;
 		out->z = data->z;
 		out->w = 1.0f;
-		out->var[0] = data->r;
-		out->var[1] = data->g;
-		out->var[2] = data->b;
+		out->avar[0] = data->r;
+		out->avar[1] = data->g;
+		out->avar[2] = data->b;
 	}
 };
 

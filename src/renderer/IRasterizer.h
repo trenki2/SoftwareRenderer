@@ -2,14 +2,15 @@
 
 namespace swr {
 
-const int MaxVar = 32;
+const int MaxAffineVars = 16;
+const int MaxPerspectiveVars = 16;
 
 struct Vertex {
 	float x;
 	float y;
 	float z;
 	float w;
-	float var[MaxVar];
+	float avar[MaxAffineVars];
 };
 
 class IRasterizer {

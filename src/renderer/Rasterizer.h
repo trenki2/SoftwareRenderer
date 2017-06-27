@@ -123,7 +123,7 @@ struct TriangleEquations {
 
 	ParameterEquation z;
 	ParameterEquation invw;
-	ParameterEquation var[MaxVar];
+	ParameterEquation avar[MaxAffineVars];
 
 	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2, int varCount)
 	{
@@ -141,7 +141,7 @@ struct TriangleEquations {
 		z.init(v0.z, v1.z, v2.z, e0, e1, e2, factor);
 		invw.init(1.0f / v0.w, 1.0f / v1.w, 1.0f / v2.w, e0, e1, e2, factor);
 		for (int i = 0; i < varCount; ++i)
-			var[i].init(v0.var[i], v1.var[i], v2.var[i], e0, e1, e2, factor);
+			avar[i].init(v0.avar[i], v1.avar[i], v2.avar[i], e0, e1, e2, factor);
 	}
 };
 
@@ -152,7 +152,7 @@ struct PixelData {
 	float z;
 	float invw;
 
-	float var[MaxVar];
+	float avar[MaxAffineVars];
 
 	PixelData() {}
 
@@ -162,7 +162,7 @@ struct PixelData {
 		if (interpolateZ) z = eqn.z.evaluate(x, y);
 		if (interpolateW) invw = eqn.invw.evaluate(x, y);
 		for (int i = 0; i < varCount; ++i)
-			var[i] = eqn.var[i].evaluate(x, y);
+			avar[i] = eqn.avar[i].evaluate(x, y);
 	}
 
 	/// Step all the pixel data in the x direction.
@@ -171,7 +171,7 @@ struct PixelData {
 		if (interpolateZ) z = eqn.z.stepX(z);
 		if (interpolateW) invw = eqn.invw.stepX(invw);
 		for (int i = 0; i < varCount; ++i)
-			var[i] = eqn.var[i].stepX(var[i]);
+			avar[i] = eqn.avar[i].stepX(avar[i]);
 	}
 
 	/// Step all the pixel data in the y direction.
@@ -180,7 +180,7 @@ struct PixelData {
 		if (interpolateZ) z = eqn.z.stepY(z);
 		if (interpolateW) invw = eqn.invw.stepY(invw);
 		for (int i = 0; i < varCount; ++i)
-			var[i] = eqn.var[i].stepY(var[i]);
+			avar[i] = eqn.avar[i].stepY(avar[i]);
 	}
 };
 
@@ -320,7 +320,7 @@ protected:
 		if (Derived::InterpolateZ) pi.z = po.z;
 		if (Derived::InterpolateW) pi.invw = po.invw;
 		for (int i = 0; i < Derived::VarCount; ++i)
-			pi.var[i] = po.var[i];
+			pi.avar[i] = po.avar[i];
 		return pi;
 	}
 };
@@ -443,7 +443,7 @@ private:
 		if (PixelShader::InterpolateZ) p.z = v.z;
 		if (PixelShader::InterpolateW) p.invw = 1.0f / v.w;
 		for (int i = 0; i < PixelShader::VarCount; ++i)
-			p.var[i] = v.var[i];
+			p.avar[i] = v.avar[i];
 		return p;
 	}
 	
@@ -476,7 +476,7 @@ private:
 		if (PixelShader::InterpolateZ) v.z += step.z;
 		if (PixelShader::InterpolateW) v.w += step.w;
 		for (int i = 0; i < PixelShader::VarCount; ++i)
-			v.var[i] += step.var[i];
+			v.avar[i] += step.avar[i];
 	}
 
 	template<class PixelShader>
@@ -488,7 +488,7 @@ private:
 		if (PixelShader::InterpolateZ) step.z = (v1.z - v0.z) / adx;
 		if (PixelShader::InterpolateW) step.w = (v1.w - v0.w) / adx;
 		for (int i = 0; i < PixelShader::VarCount; ++i)
-			step.var[i] = (v1.var[i] - v0.var[i]) / adx;
+			step.avar[i] = (v1.avar[i] - v0.avar[i]) / adx;
 		return step;
 	}
 
@@ -612,7 +612,7 @@ private:
 			if (PixelShader::InterpolateZ) v4.z = t->z + ((b->z - t->z) / dy) * iy;
 			if (PixelShader::InterpolateW) v4.w = t->w + ((b->w - t->w) / dy) * iy;
 			for (int i = 0; i < PixelShader::VarCount; ++i)
-				v4.var[i] = t->var[i] + ((b->var[i] - t->var[i]) / dy) * iy;
+				v4.avar[i] = t->avar[i] + ((b->avar[i] - t->avar[i]) / dy) * iy;
 
 			const Vertex *l = m, *r = &v4;
 			if (l->x > r->x) std::swap(l, r);

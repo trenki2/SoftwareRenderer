@@ -22,8 +22,8 @@ public:
 
 	static void drawPixel(const PixelData &p)
 	{
-		int tx = std::max(0, int(p.var[0] * 255)) % 255;
-		int ty = std::max(0, int(p.var[1] * 255)) % 255;
+		int tx = std::max(0, int(p.avar[0] * 255)) % 255;
+		int ty = std::max(0, int(p.avar[1] * 255)) % 255;
 
 		Uint32 *texBuffer = (Uint32*)((Uint8 *)texture->pixels + (int)ty * texture->pitch + (int)tx * 4);
 		Uint32 *screenBuffer = (Uint32*)((Uint8 *)surface->pixels + (int)p.y * surface->pitch + (int)p.x * 4);
@@ -51,8 +51,8 @@ public:
 		out->y = position.y;
 		out->z = position.y;
 		out->w = position.w;
-		out->var[0] = data->texcoord.x;
-		out->var[1] = data->texcoord.y;
+		out->avar[0] = data->texcoord.x;
+		out->avar[1] = data->texcoord.y;
 	}
 };
 

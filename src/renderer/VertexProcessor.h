@@ -83,7 +83,7 @@ public:
 		result.z = v0.z * (1.0f - t) + v1.z * t;
 		result.w = v0.w * (1.0f - t) + v1.w * t;
 		for (int i = 0; i < attribCount; ++i)
-			result.var[i] = v0.var[i] * (1.0f - t) + v1.var[i] * t;
+			result.avar[i] = v0.avar[i] * (1.0f - t) + v1.avar[i] * t;
 
 		return result;
 	}
