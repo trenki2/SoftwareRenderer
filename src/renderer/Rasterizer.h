@@ -544,27 +544,33 @@ private:
 			EdgeData e10 = e00; e10.stepX(eqn, s);
 			EdgeData e11 = e01; e11.stepX(eqn, s);
 
-			int result = e00.test(eqn) + e01.test(eqn) + e10.test(eqn) + e11.test(eqn);
+			bool e00_0 = eqn.e0.test(e00.ev0), e00_1 = eqn.e1.test(e00.ev1), e00_2 = eqn.e2.test(e00.ev2), e00_all = e00_0 && e00_1 && e00_2;
+			bool e01_0 = eqn.e0.test(e01.ev0), e01_1 = eqn.e1.test(e01.ev1), e01_2 = eqn.e2.test(e01.ev2), e01_all = e01_0 && e01_1 && e01_2;
+			bool e10_0 = eqn.e0.test(e10.ev0), e10_1 = eqn.e1.test(e10.ev1), e10_2 = eqn.e2.test(e10.ev2), e10_all = e10_0 && e10_1 && e10_2;
+			bool e11_0 = eqn.e0.test(e11.ev0), e11_1 = eqn.e1.test(e11.ev1), e11_2 = eqn.e2.test(e11.ev2), e11_all = e11_0 && e11_1 && e11_2;
 
-			// Potentially all out
+			int result = e00_all + e01_all + e10_all + e11_all;
+
+			// Potentially all out.
 			if (result == 0)
 			{
-				bool v0In = v0.x >= xf && v0.x < xf + s && v0.y >= yf && v0.y < yf + s;
-				bool v1In = v1.x >= xf && v1.x < xf + s && v1.y >= yf && v1.y < yf + s;
-				bool v2In = v2.x >= xf && v2.x < xf + s && v2.y >= yf && v2.y < yf + s;
-				
-				// Check for special case.
-				if (v0In || v1In || v2In)
-				 	PixelShader::template drawBlock<true>(eqn, x, y);
+				// Test for special case.
+				bool e00Same = e00_0 == e00_1 == e00_2;
+				bool e01Same = e01_0 == e01_1 == e01_2;
+				bool e10Same = e10_0 == e10_1 == e10_2;
+				bool e11Same = e11_0 == e11_1 == e11_2;
+
+				if (!e00Same || !e01Same || !e10Same || !e11Same)
+					PixelShader::template drawBlock<true>(eqn, x, y);
 			}
 			else if (result == 4)
 			{
-				// Fully Covered
+				// Fully Covered.
 				PixelShader::template drawBlock<false>(eqn, x, y);
 			}
 			else
 			{
-				// Partially Covered
+				// Partially Covered.
 				PixelShader::template drawBlock<true>(eqn, x, y);
 			}
 		}
