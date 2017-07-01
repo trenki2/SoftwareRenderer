@@ -126,7 +126,7 @@ struct TriangleEquations {
 	ParameterEquation avar[MaxAVars];
 	ParameterEquation pvar[MaxPVars];
 
-	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2, int varCount)
+	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2, int aVarCount, int pVarCount)
 	{
 		e0.init(v1, v2);
 		e1.init(v2, v0);
@@ -140,9 +140,16 @@ struct TriangleEquations {
 		
 		float factor = 1.0f / area2;
 		z.init(v0.z, v1.z, v2.z, e0, e1, e2, factor);
-		invw.init(1.0f / v0.w, 1.0f / v1.w, 1.0f / v2.w, e0, e1, e2, factor);
-		for (int i = 0; i < varCount; ++i)
+
+		float invw0 = 1.0f / v0.w;
+		float invw1 = 1.0f / v1.w;
+		float invw2 = 1.0f / v2.w;
+
+		invw.init(invw0, invw1, invw2, e0, e1, e2, factor);
+		for (int i = 0; i < aVarCount; ++i)
 			avar[i].init(v0.avar[i], v1.avar[i], v2.avar[i], e0, e1, e2, factor);
+		for (int i = 0; i < pVarCount; ++i)
+			pvar[i].init(v0.pvar[i] * invw0, v1.pvar[i] * invw1, v2.pvar[i] * invw2, e0, e1, e2, factor);
 	}
 };
 
@@ -151,37 +158,80 @@ struct PixelData {
 	int y;
 
 	float z;
+	float w;
 	float invw;
-
+	
 	float avar[MaxAVars];
+	float pvar[MaxPVars];
+	
+	float pvarTemp[MaxPVars];
 
 	PixelData() {}
 
 	/// Initialize pixel data for the given pixel coordinates.
-	void init(const TriangleEquations &eqn, float x, float y, int varCount, bool interpolateZ, bool interpolateW)
+	void init(const TriangleEquations &eqn, float x, float y, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
 	{
-		if (interpolateZ) z = eqn.z.evaluate(x, y);
-		if (interpolateW) invw = eqn.invw.evaluate(x, y);
-		for (int i = 0; i < varCount; ++i)
+		if (interpolateZ)
+			z = eqn.z.evaluate(x, y);
+		
+		if (interpolateW || pVarCount > 0) 
+		{
+			invw = eqn.invw.evaluate(x, y);
+			w = 1.0f / invw;
+		}
+
+		for (int i = 0; i < aVarCount; ++i)
 			avar[i] = eqn.avar[i].evaluate(x, y);
+		
+		for (int i = 0; i < pVarCount; ++i)
+		{
+			pvarTemp[i] = eqn.pvar[i].evaluate(x, y);
+			pvar[i] = pvarTemp[i] * w;
+		}
 	}
 
 	/// Step all the pixel data in the x direction.
-	void stepX(const TriangleEquations &eqn, int varCount, bool interpolateZ, bool interpolateW)
+	void stepX(const TriangleEquations &eqn, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
 	{
-		if (interpolateZ) z = eqn.z.stepX(z);
-		if (interpolateW) invw = eqn.invw.stepX(invw);
-		for (int i = 0; i < varCount; ++i)
+		if (interpolateZ)
+			z = eqn.z.stepX(z);
+		
+		if (interpolateW || pVarCount > 0) 
+		{
+			invw = eqn.invw.stepX(invw);
+			w = 1.0f / invw;
+		}
+
+		for (int i = 0; i < aVarCount; ++i)
 			avar[i] = eqn.avar[i].stepX(avar[i]);
+
+		for (int i = 0; i < pVarCount; ++i)
+		{
+			pvarTemp[i] = eqn.pvar[i].stepX(pvarTemp[i]);			
+			pvar[i] = pvarTemp[i] * w;
+		}
 	}
 
 	/// Step all the pixel data in the y direction.
-	void stepY(const TriangleEquations &eqn, int varCount, bool interpolateZ, bool interpolateW)
+	void stepY(const TriangleEquations &eqn, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
 	{
-		if (interpolateZ) z = eqn.z.stepY(z);
-		if (interpolateW) invw = eqn.invw.stepY(invw);
-		for (int i = 0; i < varCount; ++i)
+		if (interpolateZ)
+			z = eqn.z.stepY(z);
+		
+		if (interpolateW || pVarCount > 0) 
+		{
+			invw = eqn.invw.stepY(invw);
+			w = 1.0f / invw;
+		}
+
+		for (int i = 0; i < aVarCount; ++i)
 			avar[i] = eqn.avar[i].stepY(avar[i]);
+
+		for (int i = 0; i < pVarCount; ++i)
+		{
+			pvarTemp[i] = eqn.pvar[i].stepY(pvarTemp[i]);			
+			pvar[i] = pvarTemp[i] * w;
+		}
 	}
 };
 
@@ -259,7 +309,7 @@ public:
 		float yf = y + 0.5f;
 
 		PixelData po;
-		po.init(eqn, xf, yf, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
+		po.init(eqn, xf, yf, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 
 		EdgeData eo;
 		if (TestEdges)
@@ -282,12 +332,12 @@ public:
 					Derived::drawPixel(pi);
 				}
 
-				pi.stepX(eqn, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
+				pi.stepX(eqn, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 				if (TestEdges)
 					ei.stepX(eqn);
 			}
 
-			po.stepY(eqn, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
+			po.stepY(eqn, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 			if (TestEdges)
 				eo.stepY(eqn);
 		}
@@ -300,13 +350,13 @@ public:
 
 		PixelData p;
 		p.y = y;
-		p.init(eqn, xf, yf, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
+		p.init(eqn, xf, yf, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 
 		while (x < x2)
 		{
 			p.x = x;
 			Derived::drawPixel(p);
-			p.stepX(eqn, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
+			p.stepX(eqn, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 			x++;
 		}
 	}
@@ -500,7 +550,7 @@ private:
 	void drawTriangleBlockTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		// Compute triangle equations.
-		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount);
+		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount, PixelShader::PVarCount);
 
 		// Check if triangle is backfacing.
 		if (eqn.area2 <= 0)
@@ -584,7 +634,7 @@ private:
 	void drawTriangleSpanTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		// Compute triangle equations.
-		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount);
+		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount, PixelShader::PVarCount);
 
 		// Check if triangle is backfacing.
 		if (eqn.area2 <= 0)
