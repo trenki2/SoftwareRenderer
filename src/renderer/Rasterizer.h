@@ -245,8 +245,11 @@ public:
 	/// Tells the rasterizer to interpolate the w component.
 	static const int InterpolateW = false;
 
-	/// Tells the rasterizer how many vars to interpolate;
-	static const int VarCount = 0;
+	/// Tells the rasterizer how many affine vars to interpolate.
+	static const int AVarCount = 0;
+
+	/// Tells the rasterizer how many perspective vars to interpolate.
+	static const int PVarCount = 0;
 
 	template <bool TestEdges>
 	static void drawBlock(const TriangleEquations &eqn, int x, int y)
@@ -255,7 +258,7 @@ public:
 		float yf = y + 0.5f;
 
 		PixelData po;
-		po.init(eqn, xf, yf, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
+		po.init(eqn, xf, yf, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 
 		EdgeData eo;
 		if (TestEdges)
@@ -278,12 +281,12 @@ public:
 					Derived::drawPixel(pi);
 				}
 
-				pi.stepX(eqn, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
+				pi.stepX(eqn, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 				if (TestEdges)
 					ei.stepX(eqn);
 			}
 
-			po.stepY(eqn, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
+			po.stepY(eqn, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 			if (TestEdges)
 				eo.stepY(eqn);
 		}
@@ -296,13 +299,13 @@ public:
 
 		PixelData p;
 		p.y = y;
-		p.init(eqn, xf, yf, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
+		p.init(eqn, xf, yf, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 
 		while (x < x2)
 		{
 			p.x = x;
 			Derived::drawPixel(p);
-			p.stepX(eqn, Derived::VarCount, Derived::InterpolateZ, Derived::InterpolateW);
+			p.stepX(eqn, Derived::AVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 			x++;
 		}
 	}
@@ -319,7 +322,7 @@ protected:
 		PixelData pi;
 		if (Derived::InterpolateZ) pi.z = po.z;
 		if (Derived::InterpolateW) pi.invw = po.invw;
-		for (int i = 0; i < Derived::VarCount; ++i)
+		for (int i = 0; i < Derived::AVarCount; ++i)
 			pi.avar[i] = po.avar[i];
 		return pi;
 	}
@@ -442,7 +445,7 @@ private:
 		p.y = (int)v.y;
 		if (PixelShader::InterpolateZ) p.z = v.z;
 		if (PixelShader::InterpolateW) p.invw = 1.0f / v.w;
-		for (int i = 0; i < PixelShader::VarCount; ++i)
+		for (int i = 0; i < PixelShader::AVarCount; ++i)
 			p.avar[i] = v.avar[i];
 		return p;
 	}
@@ -475,7 +478,7 @@ private:
 		v.y += step.y;
 		if (PixelShader::InterpolateZ) v.z += step.z;
 		if (PixelShader::InterpolateW) v.w += step.w;
-		for (int i = 0; i < PixelShader::VarCount; ++i)
+		for (int i = 0; i < PixelShader::AVarCount; ++i)
 			v.avar[i] += step.avar[i];
 	}
 
@@ -487,7 +490,7 @@ private:
 		step.y = (v1.y - v0.y) / adx;
 		if (PixelShader::InterpolateZ) step.z = (v1.z - v0.z) / adx;
 		if (PixelShader::InterpolateW) step.w = (v1.w - v0.w) / adx;
-		for (int i = 0; i < PixelShader::VarCount; ++i)
+		for (int i = 0; i < PixelShader::AVarCount; ++i)
 			step.avar[i] = (v1.avar[i] - v0.avar[i]) / adx;
 		return step;
 	}
@@ -496,7 +499,7 @@ private:
 	void drawTriangleBlockTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		// Compute triangle equations.
-		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
+		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount);
 
 		// Check if triangle is backfacing.
 		if (eqn.area2 <= 0)
@@ -580,7 +583,7 @@ private:
 	void drawTriangleSpanTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
 	{
 		// Compute triangle equations.
-		TriangleEquations eqn(v0, v1, v2, PixelShader::VarCount);
+		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount);
 
 		// Check if triangle is backfacing.
 		if (eqn.area2 <= 0)
@@ -617,7 +620,7 @@ private:
 			v4.x = t->x + ((b->x - t->x) / dy) * iy;
 			if (PixelShader::InterpolateZ) v4.z = t->z + ((b->z - t->z) / dy) * iy;
 			if (PixelShader::InterpolateW) v4.w = t->w + ((b->w - t->w) / dy) * iy;
-			for (int i = 0; i < PixelShader::VarCount; ++i)
+			for (int i = 0; i < PixelShader::AVarCount; ++i)
 				v4.avar[i] = t->avar[i] + ((b->avar[i] - t->avar[i]) / dy) * iy;
 
 			const Vertex *l = m, *r = &v4;

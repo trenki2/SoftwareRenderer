@@ -11,6 +11,7 @@ struct Vertex {
 	float z;
 	float w;
 	float avar[MaxAffineVars];
+	float pvar[MaxPerspectiveVars];
 };
 
 class IRasterizer {

@@ -15,7 +15,8 @@ class PixelShader : public PixelShaderBase<PixelShader> {
 public:
 	static const bool InterpolateZ = false;
 	static const bool InterpolateW = false;
-	static const int VarCount = 3;
+	static const int AVarCount = 3;
+	static const int PVarCount = 0;
 
 	static SDL_Surface* surface;
 	static SDL_Surface* texture;
