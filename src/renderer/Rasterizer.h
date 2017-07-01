@@ -13,7 +13,7 @@ struct EdgeEquation {
 	float c;
 	bool tie; 
 
-	void init(const Vertex &v0, const Vertex &v1)
+	void init(const RasterizerVertex &v0, const RasterizerVertex &v1)
 	{
 		a = v0.y - v1.y;
 		b = v1.x - v0.x;
@@ -126,7 +126,7 @@ struct TriangleEquations {
 	ParameterEquation avar[MaxAVars];
 	ParameterEquation pvar[MaxPVars];
 
-	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2, int aVarCount, int pVarCount)
+	TriangleEquations(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2, int aVarCount, int pVarCount)
 	{
 		e0.init(v1, v2);
 		e1.init(v2, v0);
@@ -396,9 +396,9 @@ private:
 
 	RasterMode rasterMode;
 
-	void (Rasterizer::*m_triangleFunc)(const Vertex& v0, const Vertex &v1, const Vertex &v2) const;
-	void (Rasterizer::*m_lineFunc)(const Vertex& v0, const Vertex& v1) const;
-	void (Rasterizer::*m_pointFunc)(const Vertex& v) const;
+	void (Rasterizer::*m_triangleFunc)(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const;
+	void (Rasterizer::*m_lineFunc)(const RasterizerVertex &v0, const RasterizerVertex &v1) const;
+	void (Rasterizer::*m_pointFunc)(const RasterizerVertex &v) const;
 
 public:
 	Rasterizer()
@@ -429,22 +429,22 @@ public:
 		m_pointFunc = &Rasterizer::drawPointTemplate<PixelShader>;	
 	}
 
-	void drawPoint(const Vertex &v) const
+	void drawPoint(const RasterizerVertex &v) const
 	{
 		(this->*m_pointFunc)(v);
 	}
 
-	void drawLine(const Vertex &v0, const Vertex &v1) const
+	void drawLine(const RasterizerVertex &v0, const RasterizerVertex &v1) const
 	{
 		(this->*m_lineFunc)(v0, v1);
 	}
 	
-	void drawTriangle(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawTriangle(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		(this->*m_triangleFunc)(v0, v1, v2);
 	}
 
-	void drawPointList(const Vertex *vertices, const int *indices, size_t indexCount) const
+	void drawPointList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (size_t i = 0; i < indexCount; ++i) {
 			if (indices[i] == -1)
@@ -453,7 +453,7 @@ public:
 		}
 	}
 
-	void drawLineList(const Vertex *vertices, const int *indices, size_t indexCount) const
+	void drawLineList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (size_t i = 0; i + 2 <= indexCount; i += 2) {
 			if (indices[i] == -1)
@@ -462,7 +462,7 @@ public:
 		}
 	}
 
-	void drawTriangleList(const Vertex *vertices, const int *indices, size_t indexCount) const
+	void drawTriangleList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (size_t i = 0; i + 3 <= indexCount; i += 3) {
 			if (indices[i] == -1)
@@ -478,7 +478,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawPointTemplate(const Vertex &v) const
+	void drawPointTemplate(const RasterizerVertex &v) const
 	{
 		// Check scissor rect
 		if (!scissorTest(v.x, v.y))
@@ -489,7 +489,7 @@ private:
 	}
 
 	template<class PixelShader>
-	PixelData pixelDataFromVertex(const Vertex & v) const
+	PixelData pixelDataFromVertex(const RasterizerVertex & v) const
 	{
 		PixelData p;
 		p.x = (int)v.x;
@@ -502,15 +502,15 @@ private:
 	}
 	
 	template <class PixelShader>
-	void drawLineTemplate(const Vertex &v0, const Vertex &v1) const
+	void drawLineTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1) const
 	{
 		int adx = std::abs((int)v1.x - (int)v0.x);
 		int ady = std::abs((int)v1.y - (int)v0.y);
 		int steps = std::max(adx, ady);
 
-		Vertex step = computeVertexStep<PixelShader>(v0, v1, steps);
+		RasterizerVertex step = computeVertexStep<PixelShader>(v0, v1, steps);
 
-		Vertex v = v0;
+		RasterizerVertex v = v0;
 		while (steps-- > 0)
 		{
 			PixelData p = pixelDataFromVertex<PixelShader>(v);
@@ -523,7 +523,7 @@ private:
 	}
 
 	template<class PixelShader>
-	void stepVertex(Vertex &v, Vertex &step) const
+	void stepVertex(RasterizerVertex &v, RasterizerVertex &step) const
 	{
 		v.x += step.x;
 		v.y += step.y;
@@ -534,9 +534,9 @@ private:
 	}
 
 	template<class PixelShader>
-	Vertex computeVertexStep(const Vertex & v0, const Vertex & v1, int adx) const
+	RasterizerVertex computeVertexStep(const RasterizerVertex &v0, const RasterizerVertex &v1, int adx) const
 	{
-		Vertex step;
+		RasterizerVertex step;
 		step.x = (v1.x - v0.x) / adx;
 		step.y = (v1.y - v0.y) / adx;
 		if (PixelShader::InterpolateZ) step.z = (v1.z - v0.z) / adx;
@@ -547,7 +547,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawTriangleBlockTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawTriangleBlockTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		// Compute triangle equations.
 		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount, PixelShader::PVarCount);
@@ -631,7 +631,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawTriangleSpanTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawTriangleSpanTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		// Compute triangle equations.
 		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount, PixelShader::PVarCount);
@@ -640,9 +640,9 @@ private:
 		if (eqn.area2 <= 0)
 			return;
 
-		const Vertex *t = &v0;
-		const Vertex *m = &v1;
-		const Vertex *b = &v2;
+		const RasterizerVertex *t = &v0;
+		const RasterizerVertex *m = &v1;
+		const RasterizerVertex *b = &v2;
 
 		// Sort vertices from top to bottom.
 		if (t->y > m->y) std::swap(t, m);
@@ -654,19 +654,19 @@ private:
 
 		if (m->y == t->y)
 		{
-			const Vertex *l = m, *r = t;
+			const RasterizerVertex *l = m, *r = t;
 			if (l->x > r->x) std::swap(l, r);
 			drawTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
 		}
 		else if (m->y == b->y)
 		{
-			const Vertex *l = m, *r = b;
+			const RasterizerVertex *l = m, *r = b;
 			if (l->x > r->x) std::swap(l, r);
 			drawBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
 		} 
 		else
 		{
-			Vertex v4;
+			RasterizerVertex v4;
 			v4.y = m->y;
 			v4.x = t->x + ((b->x - t->x) / dy) * iy;
 			if (PixelShader::InterpolateZ) v4.z = t->z + ((b->z - t->z) / dy) * iy;
@@ -674,7 +674,7 @@ private:
 			for (int i = 0; i < PixelShader::AVarCount; ++i)
 				v4.avar[i] = t->avar[i] + ((b->avar[i] - t->avar[i]) / dy) * iy;
 
-			const Vertex *l = m, *r = &v4;
+			const RasterizerVertex *l = m, *r = &v4;
 			if (l->x > r->x) std::swap(l, r);
 
 			drawBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
@@ -683,7 +683,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawBottomFlatTriangle(const TriangleEquations &eqn, const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawBottomFlatTriangle(const TriangleEquations &eqn, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		float invslope1 = (v1.x - v0.x) / (v1.y - v0.y);
 		float invslope2 = (v2.x - v0.x) / (v2.y - v0.y);
@@ -710,7 +710,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawTopFlatTriangle(const TriangleEquations &eqn, const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawTopFlatTriangle(const TriangleEquations &eqn, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		float invslope1 = (v2.x - v0.x) / (v2.y - v0.y);
 		float invslope2 = (v2.x - v1.x) / (v2.y - v1.y);
@@ -736,7 +736,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawTriangleAdaptiveTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawTriangleAdaptiveTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		// Compute triangle bounding box.
 		float minX = (float)std::min(std::min(v0.x, v1.x), v2.x);
@@ -753,7 +753,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawTriangleModeTemplate(const Vertex& v0, const Vertex &v1, const Vertex &v2) const
+	void drawTriangleModeTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		switch (rasterMode)
 		{

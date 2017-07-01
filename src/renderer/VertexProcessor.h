@@ -20,7 +20,7 @@ enum class CullMode {
 	CW
 };
 
-typedef Vertex VertexShaderOutput;
+typedef RasterizerVertex VertexShaderOutput;
 typedef const void *VertexShaderInput[MaxVertexAttribs];
 
 class LineClipper {

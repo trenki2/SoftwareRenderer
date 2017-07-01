@@ -33,7 +33,7 @@ void drawTriangle(SDL_Surface *screen)
 	r.setPixelShader<PixelShader>();
 	PixelShader::surface = screen;
 
-	Vertex v0, v1, v2;
+	RasterizerVertex v0, v1, v2;
 	
 	v0.x = 320;
 	v0.y = 100;
