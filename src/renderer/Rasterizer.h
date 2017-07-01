@@ -123,7 +123,8 @@ struct TriangleEquations {
 
 	ParameterEquation z;
 	ParameterEquation invw;
-	ParameterEquation avar[MaxAffineVars];
+	ParameterEquation avar[MaxAVars];
+	ParameterEquation pvar[MaxPVars];
 
 	TriangleEquations(const Vertex &v0, const Vertex &v1, const Vertex &v2, int varCount)
 	{
@@ -152,7 +153,7 @@ struct PixelData {
 	float z;
 	float invw;
 
-	float avar[MaxAffineVars];
+	float avar[MaxAVars];
 
 	PixelData() {}
 
