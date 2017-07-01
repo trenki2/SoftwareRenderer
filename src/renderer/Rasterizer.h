@@ -1,5 +1,7 @@
 #pragma once
 
+/** @file */ 
+
 #include <algorithm>
 #include "IRasterizer.h"
 
@@ -21,43 +23,43 @@ struct EdgeEquation {
 		tie = a != 0 ? a > 0 : b > 0;
 	}
 
-	/// Evaluate the edge equation for the given point.
+	// Evaluate the edge equation for the given point.
 	float evaluate(float x, float y) const
 	{
 		return a * x + b * y + c;
 	}
 
-	/// Test if the given point is inside the edge.
+	// Test if the given point is inside the edge.
 	bool test(float x, float y) const
 	{
 		return test(evaluate(x, y));
 	}
 
-	/// Test for a given evaluated value.
+	// Test for a given evaluated value.
 	bool test(float v) const
 	{
 		return (v > 0 || (v == 0 && tie));
 	}
 
-	/// Step the equation value v to the x direction
+	// Step the equation value v to the x direction
 	float stepX(float v) const
 	{
 		return v + a;
 	}
 
-	/// Step the equation value v to the x direction
+	// Step the equation value v to the x direction
 	float stepX(float v, float stepSize) const
 	{
 		return v + a * stepSize;
 	}
 
-	/// Step the equation value v to the y direction
+	// Step the equation value v to the y direction
 	float stepY(float v) const
 	{
 		return v + b;
 	}
 
-	/// Step the equation value vto the y direction
+	// Step the equation value vto the y direction
 	float stepY(float v, float stepSize) const
 	{
 		return v + b * stepSize;
@@ -83,31 +85,31 @@ struct ParameterEquation {
 		c = factor * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
 	}
 
-	/// Evaluate the parameter equation for the given point.
+	// Evaluate the parameter equation for the given point.
 	float evaluate(float x, float y) const
 	{
 		return a * x + b * y + c;
 	}
 
-	/// Step parameter value v in x direction.
+	// Step parameter value v in x direction.
 	float stepX(float v) const
 	{
 		return v + a;
 	}
 
-	/// Step parameter value v in x direction.
+	// Step parameter value v in x direction.
 	float stepX(float v, float stepSize) const
 	{
 		return v + a * stepSize;
 	}
 
-	/// Step parameter value v in y direction.
+	// Step parameter value v in y direction.
 	float stepY(float v) const
 	{
 		return v + b;
 	}
 
-	/// Step parameter value v in y direction.
+	// Step parameter value v in y direction.
 	float stepY(float v, float stepSize) const
 	{
 		return v + b * stepSize;
@@ -153,22 +155,27 @@ struct TriangleEquations {
 	}
 };
 
+/// PixelData passed to the pixel shader for display.
 struct PixelData {
-	int x;
-	int y;
+	int x; ///< The x coordinate.
+	int y; ///< The y coordinate.
 
-	float z;
-	float w;
-	float invw;
+	float z; ///< The interpolated z value.
+	float w; ///< The interpolated w value.
+	float invw; ///< The interpolated 1 / w value.
 	
+	/// Affine variables.
 	float avar[MaxAVars];
+	
+	/// Perspective variables.
 	float pvar[MaxPVars];
 	
+	// Used internally.
 	float pvarTemp[MaxPVars];
 
 	PixelData() {}
 
-	/// Initialize pixel data for the given pixel coordinates.
+	// Initialize pixel data for the given pixel coordinates.
 	void init(const TriangleEquations &eqn, float x, float y, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
 	{
 		if (interpolateZ)
@@ -190,7 +197,7 @@ struct PixelData {
 		}
 	}
 
-	/// Step all the pixel data in the x direction.
+	// Step all the pixel data in the x direction.
 	void stepX(const TriangleEquations &eqn, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
 	{
 		if (interpolateZ)
@@ -212,7 +219,7 @@ struct PixelData {
 		}
 	}
 
-	/// Step all the pixel data in the y direction.
+	// Step all the pixel data in the y direction.
 	void stepY(const TriangleEquations &eqn, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
 	{
 		if (interpolateZ)
@@ -240,7 +247,7 @@ struct EdgeData {
 	float ev1;
 	float ev2;
 
-	/// Initialize the edge data values.
+	// Initialize the edge data values.
 	void init(const TriangleEquations &eqn, float x, float y)
 	{
 		ev0 = eqn.e0.evaluate(x, y);
@@ -248,7 +255,7 @@ struct EdgeData {
 		ev2 = eqn.e2.evaluate(x, y);
 	}
 
-	/// Step the edge values in the x direction.
+	// Step the edge values in the x direction.
 	void stepX(const TriangleEquations &eqn)
 	{
 		ev0 = eqn.e0.stepX(ev0);
@@ -256,7 +263,7 @@ struct EdgeData {
 		ev2 = eqn.e2.stepX(ev2);
 	}
 	
-	/// Step the edge values in the x direction.
+	// Step the edge values in the x direction.
 	void stepX(const TriangleEquations &eqn, float stepSize)
 	{
 		ev0 = eqn.e0.stepX(ev0, stepSize);
@@ -264,7 +271,7 @@ struct EdgeData {
 		ev2 = eqn.e2.stepX(ev2, stepSize);
 	}
 
-	/// Step the edge values in the y direction.
+	// Step the edge values in the y direction.
 	void stepY(const TriangleEquations &eqn)
 	{
 		ev0 = eqn.e0.stepY(ev0);
@@ -272,7 +279,7 @@ struct EdgeData {
 		ev2 = eqn.e2.stepY(ev2);
 	}
 
-	/// Step the edge values in the y direction.
+	// Step the edge values in the y direction.
 	void stepY(const TriangleEquations &eqn, float stepSize)
 	{
 		ev0 = eqn.e0.stepY(ev0, stepSize);
@@ -280,13 +287,16 @@ struct EdgeData {
 		ev2 = eqn.e2.stepY(ev2, stepSize);
 	}
 
-	/// Test for triangle containment.
+	// Test for triangle containment.
 	bool test(const TriangleEquations &eqn)
 	{
 		return eqn.e0.test(ev0) && eqn.e1.test(ev1) && eqn.e2.test(ev2);
 	}
 };
 
+/// Pixel shader base class.
+/** Derive your own pixel shaders from this class and redefine the static
+  variables to match your pixel shader requirements. */
 template <class Derived>
 class PixelShaderBase {
 public:
@@ -361,7 +371,8 @@ public:
 		}
 	}
 
-	/// This is called per pixel.
+	/// This is called per pixel. 
+	/** Implement this in your derived class to display single pixels. */
 	static void drawPixel(const PixelData &p)
 	{
 
@@ -381,12 +392,14 @@ protected:
 
 class DummyPixelShader : public PixelShaderBase<DummyPixelShader> {};
 
+/// Rasterizer mode.
 enum class RasterMode {
 	Span,
 	Block,
 	Adaptive
 };
 
+/// Rasterizer main class.
 class Rasterizer : public IRasterizer {
 private:
 	int m_minX;
@@ -401,6 +414,7 @@ private:
 	void (Rasterizer::*m_pointFunc)(const RasterizerVertex &v) const;
 
 public:
+	/// Constructor.
 	Rasterizer()
 	{
 		setRasterMode(RasterMode::Span);
@@ -408,11 +422,13 @@ public:
 		setPixelShader<DummyPixelShader>();
 	}
 
+	/// Set the raster mode. The default is RasterMode::Span.
 	void setRasterMode(RasterMode mode)
 	{
 		rasterMode = mode;
 	}
 
+	/// Set the scissor rectangle.
 	void setScissorRect(int x, int y, int width, int height)
 	{
 		m_minX = x;
@@ -421,6 +437,7 @@ public:
 		m_maxY = y + height;
 	}
 	
+	/// Set the pixel shader.
 	template <class PixelShader>
 	void setPixelShader()
 	{
@@ -429,16 +446,19 @@ public:
 		m_pointFunc = &Rasterizer::drawPointTemplate<PixelShader>;	
 	}
 
+	/// Draw a single point.
 	void drawPoint(const RasterizerVertex &v) const
 	{
 		(this->*m_pointFunc)(v);
 	}
 
+	/// Draw a single line.
 	void drawLine(const RasterizerVertex &v0, const RasterizerVertex &v1) const
 	{
 		(this->*m_lineFunc)(v0, v1);
 	}
 	
+	/// Draw a single triangle.
 	void drawTriangle(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		(this->*m_triangleFunc)(v0, v1, v2);

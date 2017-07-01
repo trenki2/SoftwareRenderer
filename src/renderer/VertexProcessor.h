@@ -1,26 +1,34 @@
 #pragma once
 
+/** @file */ 
+
 #include <vector>
 #include <cassert>
 #include "IRasterizer.h"
 
 namespace swr {
 
+/// Maximum supported number of vertex attributes.
 const int MaxVertexAttribs = 8;    
 
+/// Primitive draw mode.
 enum class DrawMode {
 	Point,
 	Line,
 	Triangle
 };
 
+/// Triangle culling mode.
 enum class CullMode {
 	None,
 	CCW,
 	CW
 };
 
+/// Vertex shader output.
 typedef RasterizerVertex VertexShaderOutput;
+
+/// Vertex shader input is an array of vertex attribute pointers.
 typedef const void *VertexShaderInput[MaxVertexAttribs];
 
 class LineClipper {
@@ -178,12 +186,16 @@ private:
 	}
 };
 
+/// Base class for vertex shaders.
+/** Derive your own vertex shaders from this class and redefine AttribCount etc. */
 template <class Derived>
 class VertexShaderBase {
 public:
 	/// Number of vertex attribute pointers this vertex shader uses.
 	static const int AttribCount = 0;
 
+	/// Process a single vertex.
+	/** Implement this in your own vertex shader. */
 	static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
 	{
 
@@ -228,8 +240,10 @@ public:
 	}
 };
 
+/// Process vertices and pass them to a rasterizer.
 class VertexProcessor {
 public:
+	/// Constructor.
 	VertexProcessor(IRasterizer *rasterizer)
 	{
 		setRasterizer(rasterizer);
@@ -238,12 +252,15 @@ public:
 		setVertexShader<DummyVertexShader>();
 	}
 
+	/// Change the rasterizer where the primitives are sent.
 	void setRasterizer(IRasterizer *rasterizer)
 	{
 		assert(rasterizer != nullptr);
 		m_rasterizer = rasterizer;
 	}
 
+	/// Set the viewport.
+	/** Top-Left is (0, 0) */
 	void setViewport(int x, int y, int width, int height)
 	{
 		m_viewport.x = x;
@@ -257,17 +274,22 @@ public:
 		m_viewport.oy = (y + m_viewport.py);
 	}
 
+	/// Set the depth range.
+	/** Default is (0, 1) */
 	void setDepthRange(float n, float f)
 	{
 		m_depthRange.n = n;
 		m_depthRange.f = f;
 	}
 
+	/// Set the cull mode.
+	/** Default is CullMode::CW to cull clockwise triangles. */
 	void setCullMode(CullMode mode)
 	{
 		m_cullMode = mode;
 	}
 
+	/// Set the vertex shader.
 	template <class VertexShader>
 	void setVertexShader()
 	{
@@ -276,6 +298,7 @@ public:
 		m_processVertexFunc = VertexShader::processVertex;
 	}
 
+	/// Set a vertex attrib pointer.
 	void setVertexAttribPointer(int index, int stride, const void *buffer)
 	{
 		assert(index < MaxVertexAttribs);
@@ -283,6 +306,7 @@ public:
 		m_attributes[index].stride = stride;
 	}
 	
+	/// Draw a number of points, lines or triangles.
 	void drawElements(DrawMode mode, size_t count, int *indices) const
 	{
 		m_verticesOut.clear();

@@ -12,10 +12,10 @@ const int MaxPVars = 16;
 
 /// Vertex input structure for the Rasterizer. Output from the VertexProcessor.
 struct RasterizerVertex {
-	float x;
-	float y;
-	float z;
-	float w;
+	float x; ///< The x component.
+	float y; ///< The y component.
+	float z; ///< The z component.
+	float w; ///< The w component.
 
 	/// Affine variables.
 	float avar[MaxAVars];
