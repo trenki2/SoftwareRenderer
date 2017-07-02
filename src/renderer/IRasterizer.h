@@ -2,6 +2,8 @@
 
 /** @file */ 
 
+#include <cstddef>
+
 namespace swr {
 
 const int BlockSize = 8;

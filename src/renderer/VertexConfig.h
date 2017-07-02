@@ -2,6 +2,8 @@
 
 /** @file */
 
+#include "IRasterizer.h"
+
 namespace swr {
 
 /// Maximum supported number of vertex attributes.

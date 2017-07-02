@@ -3,9 +3,23 @@ cmake_minimum_required(VERSION 3.7)
 project(renderer)
 
 set(SOURCE_FILES 
+	EdgeData.h
+	EdgeEquation.h
 	IRasterizer.h
+	LineClipper.cpp
+	LineClipper.h
+	ParameterEquation.h
+	PixelData.h
+	PixelShaderBase.h
+	PolyClipper.cpp
+	PolyClipper.h
 	Rasterizer.h
-	VertexProcessor.h)
+	TriangleEquations.h
+	VertexCache.h
+	VertexConfig.h
+	VertexProcessor.cpp
+	VertexProcessor.h
+	VertexShaderBase.h)
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -16,3 +30,5 @@ endif ()
 if (CMAKE_COMPILER_IS_GNUCXX)
 	add_definitions("-Wall")
 endif ()
+
+add_library(renderer ${SOURCE_FILES})
