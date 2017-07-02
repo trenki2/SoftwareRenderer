@@ -4,6 +4,8 @@
 
 namespace swr {
 
+const int BlockSize = 8;
+
 /// Maximum affine variables used for interpolation across the triangle.
 const int MaxAVars = 16;
 
@@ -23,7 +25,6 @@ struct RasterizerVertex {
 	/// Perspective variables.
 	float pvar[MaxPVars];
 };
-
 
 /// Interface for the rasterizer used by the VertexProcessor.
 class IRasterizer {
