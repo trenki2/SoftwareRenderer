@@ -267,7 +267,7 @@ int VertexProcessor::primitiveCount(DrawMode mode) const
 		case DrawMode::Triangle: factor = 3; break;
 	}
 
-	return m_indicesOut.size() / factor;
+	return (int)(m_indicesOut.size() / factor);
 }
 
 void VertexProcessor::drawPrimitives(DrawMode mode) const
