@@ -1,7 +1,6 @@
 #include "SDL.h"
 #include "SDL_image.h"
-#include "Rasterizer.h"
-#include "VertexProcessor.h"
+#include "Renderer.h"
 #include "ObjData.h"
 #include "vector_math.h"
 

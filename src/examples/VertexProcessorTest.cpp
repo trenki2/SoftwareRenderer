@@ -1,6 +1,5 @@
 #include "SDL.h"
-#include "Rasterizer.h"
-#include "VertexProcessor.h"
+#include "Renderer.h"
 
 using namespace swr;
 
