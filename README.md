@@ -18,32 +18,32 @@ pixel shader support.
 // Define a pixel shader
 class PixelShader : public PixelShaderBase<PixelShader> {
 public:
-	static const bool InterpolateZ = true;
-	static const bool InterpolateW = true;
+  static const bool InterpolateZ = true;
+  static const bool InterpolateW = true;
 
-    // Number of affine/linear variables used.
-	static const int AVarCount = 3;
+  // Number of affine/linear variables used.
+  static const int AVarCount = 3;
 
-    // Number of perspective correct variables used.
-	static const int PVarCount = 2;
+  // Number of perspective correct variables used.
+  static const int PVarCount = 2;
 
-	static void drawPixel(const PixelData &p)
-	{
-		...
-	}
+  static void drawPixel(const PixelData &p)
+  {
+      ...
+  }
 };
 
 // Define a vertex shader
 class VertexShader : public VertexShaderBase<VertexShader> {
 public:
-    // Number of input vertex attributes used.
-	static const int AttribCount = 1;
+  // Number of input vertex attributes used.
+  static const int AttribCount = 1;
 
-	static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
-	{
-        // Write result to out.
-		...
-	}
+  static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
+  {
+    // Write result to out.
+    ...
+  }
 };
 
 // Use the renderer
