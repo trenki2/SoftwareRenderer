@@ -61,7 +61,7 @@ SDL_Surface* PixelShader::texture;
 
 class VertexShader : public VertexShaderBase<VertexShader> {
 public:
-	static const int AttribCount = 2;
+	static const int AttribCount = 1;
 
 	static mat4f modelViewProjectionMatrix;
 
