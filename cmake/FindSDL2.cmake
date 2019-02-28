@@ -49,8 +49,8 @@
 #
 #
 #
-# $SDLDIR is an environment variable that would correspond to the
-# ./configure --prefix=$SDLDIR used in building SDL.  l.e.galup 9-20-02
+# $SDL2DIR is an environment variable that would correspond to the
+# ./configure --prefix=$SDL2DIR used in building SDL.  l.e.galup 9-20-02
 #
 # Modified by Eric Wing.  Added code to assist with automated building
 # by using environmental variables and providing a more
@@ -77,10 +77,10 @@ endif()
 
 find_path(SDL2_INCLUDE_DIR SDL.h
   HINTS
-    ENV SDLDIR
+    ENV SDL2DIR
     ${SDL2_DIR}
   PATH_SUFFIXES SDL2
-                # path suffixes to search inside ENV{SDLDIR}
+                # path suffixes to search inside ENV{SDL2DIR}
                 include/SDL2 include
 )
 
@@ -90,12 +90,10 @@ else()
   set(VC_LIB_PATH_SUFFIX lib/x86)
 endif()
 
-# SDL-1.1 is the name used by FreeBSD ports...
-# don't confuse it for the version number.
 find_library(SDL2_LIBRARY_TEMP
   NAMES SDL2
   HINTS
-    ENV SDLDIR
+    ENV SDL2DIR
     ${SDL2_DIR}
   PATH_SUFFIXES lib ${VC_LIB_PATH_SUFFIX}
 )
@@ -114,7 +112,7 @@ if(NOT SDL2_BUILDING_LIBRARY)
     find_library(SDL2MAIN_LIBRARY
       NAMES SDL2main
       HINTS
-        ENV SDLDIR
+        ENV SDL2DIR
         ${SDL2_DIR}
       PATH_SUFFIXES lib ${VC_LIB_PATH_SUFFIX}
       PATHS
@@ -143,9 +141,9 @@ endif()
 if(SDL2_LIBRARY_TEMP)
   # For SDLmain
   if(SDL2MAIN_LIBRARY AND NOT SDL2_BUILDING_LIBRARY)
-    list(FIND SDL2_LIBRARY_TEMP "${SDL2MAIN_LIBRARY}" _SDL2_MAIN_INDEX)
+    list(FIND SDL2_LIBRARY_TEMP "${SDLMAIN_LIBRARY}" _SDL2_MAIN_INDEX)
     if(_SDL2_MAIN_INDEX EQUAL -1)
-      set(SDL2_LIBRARY_TEMP "${SDL2MAIN_LIBRARY}" ${SDL2_LIBRARY_TEMP})
+      set(SDL2_LIBRARY_TEMP "${SDLMAIN_LIBRARY}" ${SDL2_LIBRARY_TEMP})
     endif()
     unset(_SDL2_MAIN_INDEX)
   endif()
@@ -192,11 +190,11 @@ if(SDL2_INCLUDE_DIR AND EXISTS "${SDL2_INCLUDE_DIR}/SDL2_version.h")
   unset(SDL2_VERSION_PATCH)
 endif()
 
-set(SDL2_LIBRARIES ${SDL2_LIBRARY})
+set(SDL2_LIBRARIES ${SDL2_LIBRARY} ${SDL2MAIN_LIBRARY})
 set(SDL2_INCLUDE_DIRS ${SDL2_INCLUDE_DIR})
 
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(SDL
-                                  REQUIRED_VARS SDL2_LIBRARIES SDL2_INCLUDE_DIRS
-                                  VERSION_VAR SDL2_VERSION_STRING)
+include(FindPackageHandleStandardArgs)
 
-mark_as_advanced(SDL2_LIBRARY SDL2_INCLUDE_DIR)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(SDL
+                                  REQUIRED_VARS SDL2_LIBRARY SDL2_INCLUDE_DIR
+                                  VERSION_VAR SDL2_VERSION_STRING)

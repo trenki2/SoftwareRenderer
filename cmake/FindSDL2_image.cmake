@@ -15,7 +15,7 @@
 #   SDL2_IMAGE_INCLUDE_DIRS, where to find the headers
 #   SDL2_IMAGE_FOUND, if false, do not try to link against
 #   SDL2_IMAGE_VERSION_STRING - human-readable string containing the
-#                              version of SDL_image
+#                              version of SDL2_image
 #
 #
 #
@@ -23,14 +23,14 @@
 #
 # ::
 #
-#   SDL2IMAGE_LIBRARY (same value as SDL_IMAGE_LIBRARIES)
-#   SDL2IMAGE_INCLUDE_DIR (same value as SDL_IMAGE_INCLUDE_DIRS)
-#   SDL2IMAGE_FOUND (same value as SDL_IMAGE_FOUND)
+#   SDL2IMAGE_LIBRARY (same value as SDL2_IMAGE_LIBRARIES)
+#   SDL2IMAGE_INCLUDE_DIR (same value as SDL2_IMAGE_INCLUDE_DIRS)
+#   SDL2IMAGE_FOUND (same value as SDL2_IMAGE_FOUND)
 #
 #
 #
-# $SDL2DIR is an environment variable that would correspond to the
-# ./configure --prefix=$SDL2DIR used in building SDL.
+# $SDLDIR is an environment variable that would correspond to the
+# ./configure --prefix=$SDLDIR used in building SDL.
 #
 # Created by Eric Wing.  This was influenced by the FindSDL.cmake
 # module, but with modifications to recognize OS X frameworks and
@@ -69,13 +69,13 @@ find_library(SDL2_IMAGE_LIBRARY
   PATH_SUFFIXES lib ${VC_LIB_PATH_SUFFIX}
 )
 
-if(SDL2_IMAGE_INCLUDE_DIR AND EXISTS "${SDL2_IMAGE_INCLUDE_DIR}/SDL_image.h")
-  file(STRINGS "${SDL2_IMAGE_INCLUDE_DIR}/SDL_image.h" SDL2_IMAGE_VERSION_MAJOR_LINE REGEX "^#define[ \t]+SDL_IMAGE_MAJOR_VERSION[ \t]+[0-9]+$")
-  file(STRINGS "${SDL2_IMAGE_INCLUDE_DIR}/SDL_image.h" SDL2_IMAGE_VERSION_MINOR_LINE REGEX "^#define[ \t]+SDL_IMAGE_MINOR_VERSION[ \t]+[0-9]+$")
-  file(STRINGS "${SDL2_IMAGE_INCLUDE_DIR}/SDL_image.h" SDL2_IMAGE_VERSION_PATCH_LINE REGEX "^#define[ \t]+SDL_IMAGE_PATCHLEVEL[ \t]+[0-9]+$")
-  string(REGEX REPLACE "^#define[ \t]+SDL_IMAGE_MAJOR_VERSION[ \t]+([0-9]+)$" "\\1" SDL2_IMAGE_VERSION_MAJOR "${SDL_IMAGE_VERSION_MAJOR_LINE}")
-  string(REGEX REPLACE "^#define[ \t]+SDL_IMAGE_MINOR_VERSION[ \t]+([0-9]+)$" "\\1" SDL2_IMAGE_VERSION_MINOR "${SDL_IMAGE_VERSION_MINOR_LINE}")
-  string(REGEX REPLACE "^#define[ \t]+SDL_IMAGE_PATCHLEVEL[ \t]+([0-9]+)$" "\\1" SDL2_IMAGE_VERSION_PATCH "${SDL_IMAGE_VERSION_PATCH_LINE}")
+if(SDL2_IMAGE_INCLUDE_DIR AND EXISTS "${SDL2_IMAGE_INCLUDE_DIR}/SDL2_image.h")
+  file(STRINGS "${SDL2_IMAGE_INCLUDE_DIR}/SDL2_image.h" SDL2_IMAGE_VERSION_MAJOR_LINE REGEX "^#define[ \t]+SDL2_IMAGE_MAJOR_VERSION[ \t]+[0-9]+$")
+  file(STRINGS "${SDL2_IMAGE_INCLUDE_DIR}/SDL2_image.h" SDL2_IMAGE_VERSION_MINOR_LINE REGEX "^#define[ \t]+SDL2_IMAGE_MINOR_VERSION[ \t]+[0-9]+$")
+  file(STRINGS "${SDL2_IMAGE_INCLUDE_DIR}/SDL2_image.h" SDL2_IMAGE_VERSION_PATCH_LINE REGEX "^#define[ \t]+SDL2_IMAGE_PATCHLEVEL[ \t]+[0-9]+$")
+  string(REGEX REPLACE "^#define[ \t]+SDL2_IMAGE_MAJOR_VERSION[ \t]+([0-9]+)$" "\\1" SDL2_IMAGE_VERSION_MAJOR "${SDL2_IMAGE_VERSION_MAJOR_LINE}")
+  string(REGEX REPLACE "^#define[ \t]+SDL2_IMAGE_MINOR_VERSION[ \t]+([0-9]+)$" "\\1" SDL2_IMAGE_VERSION_MINOR "${SDL2_IMAGE_VERSION_MINOR_LINE}")
+  string(REGEX REPLACE "^#define[ \t]+SDL2_IMAGE_PATCHLEVEL[ \t]+([0-9]+)$" "\\1" SDL2_IMAGE_VERSION_PATCH "${SDL2_IMAGE_VERSION_PATCH_LINE}")
   set(SDL2_IMAGE_VERSION_STRING ${SDL2_IMAGE_VERSION_MAJOR}.${SDL2_IMAGE_VERSION_MINOR}.${SDL2_IMAGE_VERSION_PATCH})
   unset(SDL2_IMAGE_VERSION_MAJOR_LINE)
   unset(SDL2_IMAGE_VERSION_MINOR_LINE)
@@ -87,6 +87,8 @@ endif()
 
 set(SDL2_IMAGE_LIBRARIES ${SDL2_IMAGE_LIBRARY})
 set(SDL2_IMAGE_INCLUDE_DIRS ${SDL2_IMAGE_INCLUDE_DIR})
+
+include(FindPackageHandleStandardArgs)
 
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(SDL2_image
                                   REQUIRED_VARS SDL2_IMAGE_LIBRARIES SDL2_IMAGE_INCLUDE_DIRS
