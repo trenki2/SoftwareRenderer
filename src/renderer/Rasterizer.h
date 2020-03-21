@@ -161,9 +161,11 @@ private:
 		p.x = (int)v.x;
 		p.y = (int)v.y;
 		if (PixelShader::InterpolateZ) p.z = v.z;
-		if (PixelShader::InterpolateW) p.invw = 1.0f / v.w;
+		if (PixelShader::InterpolateW) { p.w = v.w; p.invw = 1.0f / v.w; }
 		for (int i = 0; i < PixelShader::AVarCount; ++i)
 			p.avar[i] = v.avar[i];
+		for (int i = 0; i < PixelShader::PVarCount; ++i)
+			p.pvar[i] = v.pvar[i];
 		return p;
 	}
 	
@@ -197,6 +199,8 @@ private:
 		if (PixelShader::InterpolateW) v.w += step.w;
 		for (int i = 0; i < PixelShader::AVarCount; ++i)
 			v.avar[i] += step.avar[i];
+		for (int i = 0; i < PixelShader::PVarCount; ++i)
+			v.pvar[i] += step.pvar[i];
 	}
 
 	template<class PixelShader>
@@ -209,6 +213,8 @@ private:
 		if (PixelShader::InterpolateW) step.w = (v1.w - v0.w) / adx;
 		for (int i = 0; i < PixelShader::AVarCount; ++i)
 			step.avar[i] = (v1.avar[i] - v0.avar[i]) / adx;
+		for (int i = 0; i < PixelShader::PVarCount; ++i)
+			step.pvar[i] = (v1.pvar[i] - v0.pvar[i]) / adx;
 		return step;
 	}
 
