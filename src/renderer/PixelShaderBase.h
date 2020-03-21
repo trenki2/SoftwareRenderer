@@ -120,9 +120,14 @@ protected:
 	{
 		PixelData pi;
 		if (Derived::InterpolateZ) pi.z = po.z;
-		if (Derived::InterpolateW) pi.invw = po.invw;
+		if (Derived::InterpolateW) { pi.w = po.w; pi.invw = po.invw; }
 		for (int i = 0; i < Derived::AVarCount; ++i)
 			pi.avar[i] = po.avar[i];
+		for (int i = 0; i < Derived::PVarCount; ++i) 
+		{
+			pi.pvarTemp[i] = po.pvarTemp[i];
+			pi.pvar[i] = po.pvar[i];
+		}
 		return pi;
 	}
 };
