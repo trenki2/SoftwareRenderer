@@ -65,7 +65,7 @@ public:
 	{
 		setRasterMode(RasterMode::Span);
 		setScissorRect(0, 0, 0, 0);
-		setPixelShader<DummyPixelShader>();
+		setPixelShader<NullPixelShader>();
 	}
 
 	/// Set the raster mode. The default is RasterMode::Span.

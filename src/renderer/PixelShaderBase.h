@@ -132,6 +132,6 @@ protected:
 	}
 };
 
-class DummyPixelShader : public PixelShaderBase<DummyPixelShader> {};
+class NullPixelShader : public PixelShaderBase<NullPixelShader> {};
 
 } // end namespace swr

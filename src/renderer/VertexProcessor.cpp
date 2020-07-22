@@ -31,7 +31,7 @@ VertexProcessor::VertexProcessor(IRasterizer *rasterizer)
 	setRasterizer(rasterizer);
 	setCullMode(CullMode::CW);
 	setDepthRange(0.0f, 1.0f);
-	setVertexShader<DummyVertexShader>();
+	setVertexShader<NullVertexShader>();
 }
 
 void VertexProcessor::setRasterizer(IRasterizer *rasterizer)
