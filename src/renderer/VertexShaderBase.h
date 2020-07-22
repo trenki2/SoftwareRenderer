@@ -50,6 +50,6 @@ public:
 	}
 };
 
-class NullVertexShader : public VertexShaderBase<NullVertexShader> {};
+class DummyVertexShader : public VertexShaderBase<DummyVertexShader> {};
 
 } // end namespace swr

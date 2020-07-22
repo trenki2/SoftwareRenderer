@@ -49,8 +49,8 @@ public:
 		int tx = std::max(0, int(p.pvar[0] * 255)) % 255;
 		int ty = std::max(0, int(p.pvar[1] * 255)) % 255;
 
-		Uint32 *texBuffer = (Uint32*)((Uint8 *)texture->pixels + (int)ty * texture->pitch + (int)tx * 4);
-		Uint32 *screenBuffer = (Uint32*)((Uint8 *)surface->pixels + (int)p.y * surface->pitch + (int)p.x * 4);
+		Uint32 *texBuffer = (Uint32*)((Uint8 *)texture->pixels + (size_t)ty * (size_t)texture->pitch + (size_t)tx * 4);
+		Uint32 *screenBuffer = (Uint32*)((Uint8 *)surface->pixels + (size_t)p.y * (size_t)surface->pitch + (size_t)p.x * 4);
 
 		*screenBuffer = *texBuffer;
 	}

@@ -175,7 +175,7 @@ template <typename T>
 struct vec3 {
 	T x, y, z;
 	
-	vec3() {};
+	vec3() : x(0), y(0), z(0) {};
 	explicit vec3(const T i) : x(i), y(i), z(i) {}
 	explicit vec3(const T ix, const T iy, const T iz) : x(ix), y(iy), z(iz) {}
 	explicit vec3(const vec2<T>& xy, const T iz) : x(xy.x), y(xy.y), z(iz) {}

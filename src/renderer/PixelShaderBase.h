@@ -31,6 +31,9 @@ SOFTWARE.
 
 namespace swr {
 
+#pragma warning (push)
+#pragma warning (disable: 6201 6294) 
+
 /// Pixel shader base class.
 /** Derive your own pixel shaders from this class and redefine the static
   variables to match your pixel shader requirements. */
@@ -133,5 +136,7 @@ protected:
 };
 
 class NullPixelShader : public PixelShaderBase<NullPixelShader> {};
+
+#pragma warning (pop)
 
 } // end namespace swr

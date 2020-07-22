@@ -38,6 +38,9 @@ SOFTWARE.
 
 namespace swr {
 
+#pragma warning (push)
+#pragma warning (disable: 6294 6201)
+
 /// Rasterizer mode.
 enum class RasterMode {
 	Span,
@@ -441,5 +444,7 @@ private:
 		}
 	}
 };
+
+#pragma warning (pop)
 
 } // end namespace swr

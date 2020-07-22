@@ -31,7 +31,7 @@ VertexProcessor::VertexProcessor(IRasterizer *rasterizer)
 	setRasterizer(rasterizer);
 	setCullMode(CullMode::CW);
 	setDepthRange(0.0f, 1.0f);
-	setVertexShader<NullVertexShader>();
+	setVertexShader<DummyVertexShader>();
 }
 
 void VertexProcessor::setRasterizer(IRasterizer *rasterizer)
@@ -67,8 +67,12 @@ void VertexProcessor::setCullMode(CullMode mode)
 void VertexProcessor::setVertexAttribPointer(int index, int stride, const void *buffer)
 {
 	assert(index < MaxVertexAttribs);
+	
+	#pragma warning (push)
+	#pragma warning (disable : 6386) // the assert causes the VC++ x64 compiler to think that we have a buffer overrun
 	m_attributes[index].buffer = buffer;
 	m_attributes[index].stride = stride;
+	#pragma warning (pop)
 }
 
 void VertexProcessor::drawElements(DrawMode mode, size_t count, int *indices) const
@@ -130,7 +134,8 @@ int VertexProcessor::clipMask(VertexShaderOutput &v) const
 const void *VertexProcessor::attribPointer(int attribIndex, int elementIndex) const
 {
 	const Attribute &attrib = m_attributes[attribIndex];
-	return (char*)attrib.buffer + attrib.stride * elementIndex;
+	size_t offset = (size_t)attrib.stride * (size_t)elementIndex;
+	return (char*)attrib.buffer + offset;
 }
 
 void VertexProcessor::processVertex(VertexShaderInput in, VertexShaderOutput *out) const
@@ -282,7 +287,7 @@ void VertexProcessor::processPrimitives(DrawMode mode) const
 
 int VertexProcessor::primitiveCount(DrawMode mode) const
 {
-	int factor;
+	int factor = 1;
 	
 	switch (mode)
 	{

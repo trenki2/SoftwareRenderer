@@ -59,6 +59,9 @@ private:
 public:
 	PolyClipper()
 	{
+		m_avarCount = 0;
+		m_pvarCount = 0;
+		m_vertices = NULL;
 		m_indicesIn = new std::vector<int>();
 		m_indicesOut = new std::vector<int>();
 	}

@@ -29,6 +29,9 @@ SOFTWARE.
 
 namespace swr {
 
+#pragma warning(push)
+#pragma warning(disable: 26495) // variable in uninitialized
+
 struct TriangleEquations {
 	float area2;
 
@@ -67,5 +70,7 @@ struct TriangleEquations {
 			pvar[i].init(v0.pvar[i] * invw0, v1.pvar[i] * invw1, v2.pvar[i] * invw2, e0, e1, e2, factor);
 	}
 };
+
+#pragma warning(pop)
 
 } // end namespace swr

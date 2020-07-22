@@ -44,7 +44,7 @@ public:
 		
 		Uint32 color = rint << 16 | gint << 8 | bint;
 
-		Uint32 *buffer = (Uint32*)((Uint8 *)surface->pixels + (int)p.y * surface->pitch + (int)p.x * 4);
+		Uint32 *buffer = (Uint32*)((Uint8 *)surface->pixels + (size_t)p.y * (size_t)surface->pitch + (size_t)p.x * 4);
 		*buffer = color;
 	}
 };

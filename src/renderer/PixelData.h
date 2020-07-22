@@ -31,6 +31,9 @@ SOFTWARE.
 
 namespace swr {
 
+#pragma warning(push)
+#pragma warning(disable: 26495) // variable in uninitialized
+
 /// PixelData passed to the pixel shader for display.
 struct PixelData {
 	int x; ///< The x coordinate.
@@ -117,5 +120,7 @@ struct PixelData {
 		}
 	}
 };
+
+#pragma warning(pop)
 
 } // end namespace swr
