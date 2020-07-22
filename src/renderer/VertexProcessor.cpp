@@ -195,14 +195,14 @@ void VertexProcessor::clipLines() const
 
 		if (m_clipMask[index0])
 		{
-			VertexShaderOutput newV = Helper::interpolateVertex(v0, v1, lineClipper.t0, m_attribCount);
+			VertexShaderOutput newV = Helper::interpolateVertex(v0, v1, lineClipper.t0, m_avarCount, m_pvarCount);
 			m_verticesOut.push_back(newV);
 			m_indicesOut[i] = (int)(m_verticesOut.size() - 1);
 		}
 
 		if (m_clipMask[index1])
 		{
-			VertexShaderOutput newV = Helper::interpolateVertex(v0, v1, lineClipper.t1, m_attribCount);
+			VertexShaderOutput newV = Helper::interpolateVertex(v0, v1, lineClipper.t1, m_avarCount, m_pvarCount);
 			m_verticesOut.push_back(newV);
 			m_indicesOut[i + 1] = (int)(m_verticesOut.size() - 1);
 		}
@@ -227,7 +227,7 @@ void VertexProcessor::clipTriangles() const
 
 		int clipMask = m_clipMask[i0] | m_clipMask[i1] | m_clipMask[i2];
 
-		polyClipper.init(&m_verticesOut, i0, i1, i2, m_attribCount);
+		polyClipper.init(&m_verticesOut, i0, i1, i2, m_avarCount, m_pvarCount);
 
 		if (clipMask & ClipMask::PosX) polyClipper.clipToPlane(-1, 0, 0, 1);
 		if (clipMask & ClipMask::NegX) polyClipper.clipToPlane( 1, 0, 0, 1);

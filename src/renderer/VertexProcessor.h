@@ -78,6 +78,8 @@ public:
 	void setVertexShader()
 	{
 		assert(VertexShader::AttribCount <= MaxVertexAttribs);
+		m_avarCount = VertexShader::AVarCount;
+		m_pvarCount = VertexShader::PVarCount;
 		m_attribCount = VertexShader::AttribCount;
 		m_processVertexFunc = VertexShader::processVertex;
 	}
@@ -131,7 +133,10 @@ private:
 	IRasterizer *m_rasterizer;
 	
 	void (*m_processVertexFunc)(VertexShaderInput, VertexShaderOutput*);
+	
 	int m_attribCount;
+	int m_avarCount;
+	int m_pvarCount;
 
 	struct Attribute {
 		const void *buffer;

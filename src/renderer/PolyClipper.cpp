@@ -28,9 +28,10 @@ SOFTWARE.
 
 namespace swr {
 
-void PolyClipper::init(std::vector<VertexShaderOutput> *vertices, int i1, int i2, int i3, int attribCount)
+void PolyClipper::init(std::vector<VertexShaderOutput> *vertices, int i1, int i2, int i3, int avarCount, int pvarCount)
 {
-	m_attribCount = attribCount;
+	m_avarCount = avarCount;
+	m_pvarCount = pvarCount;
 	m_vertices = vertices;
 
 	m_indicesIn->clear();
@@ -67,7 +68,7 @@ void PolyClipper::clipToPlane(float a, float b, float c, float d)
 		{
 			float t = dp < 0 ? dpPrev / (dpPrev - dp) : -dpPrev / (dp - dpPrev);
 
-			VertexShaderOutput vOut = Helper::interpolateVertex((*m_vertices)[idxPrev], (*m_vertices)[idx], t, m_attribCount);
+			VertexShaderOutput vOut = Helper::interpolateVertex((*m_vertices)[idxPrev], (*m_vertices)[idx], t, m_avarCount, m_pvarCount);
 			m_vertices->push_back(vOut);
 			m_indicesOut->push_back((int)(m_vertices->size() - 1));
 		}

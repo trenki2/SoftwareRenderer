@@ -58,7 +58,9 @@ struct VertexData {
 
 class VertexShader : public VertexShaderBase<VertexShader> {
 public:
-	static const int AttribCount = 3;
+	static const int AttribCount = 1;
+	static const int AVarCount = 3;
+	static const int PVarCount = 0;
 
 	static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
 	{

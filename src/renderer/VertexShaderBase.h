@@ -36,6 +36,12 @@ public:
 	/// Number of vertex attribute pointers this vertex shader uses.
 	static const int AttribCount = 0;
 
+	/// Number of affine output variables.
+	static const int AVarCount = 0;
+
+	/// Number of perspective correct output variables.
+	static const int PVarCount = 0;
+
 	/// Process a single vertex.
 	/** Implement this in your own vertex shader. */
 	static void processVertex(VertexShaderInput in, VertexShaderOutput *out)

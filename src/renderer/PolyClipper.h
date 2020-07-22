@@ -31,7 +31,7 @@ namespace swr {
 
 class Helper {
 public:
-	static VertexShaderOutput interpolateVertex(const VertexShaderOutput &v0, const VertexShaderOutput &v1, float t, int attribCount)
+	static VertexShaderOutput interpolateVertex(const VertexShaderOutput &v0, const VertexShaderOutput &v1, float t, int avarCount, int pvarCount)
 	{
 		VertexShaderOutput result;
 		
@@ -39,8 +39,10 @@ public:
 		result.y = v0.y * (1.0f - t) + v1.y * t;
 		result.z = v0.z * (1.0f - t) + v1.z * t;
 		result.w = v0.w * (1.0f - t) + v1.w * t;
-		for (int i = 0; i < attribCount; ++i)
+		for (int i = 0; i < avarCount; ++i)
 			result.avar[i] = v0.avar[i] * (1.0f - t) + v1.avar[i] * t;
+		for (int i = 0; i < pvarCount; ++i)
+			result.pvar[i] = v0.pvar[i] * (1.0f - t) + v1.pvar[i] * t;
 
 		return result;
 	}
@@ -48,7 +50,8 @@ public:
 
 class PolyClipper {
 private:
-	int m_attribCount;
+	int m_avarCount;
+	int m_pvarCount;
 	std::vector<int> *m_indicesIn;
 	std::vector<int> *m_indicesOut;
 	std::vector<VertexShaderOutput> *m_vertices;
@@ -66,7 +69,7 @@ public:
 		delete m_indicesOut;
 	}
 
-	void init(std::vector<VertexShaderOutput> *vertices, int i1, int i2, int i3, int attribCount);
+	void init(std::vector<VertexShaderOutput> *vertices, int i1, int i2, int i3, int avarCount, int pvarCount);
 
 	// Clip the poly to the plane given by the formula a * x + b * y + c * z + d * w.
 	void clipToPlane(float a, float b, float c, float d);
