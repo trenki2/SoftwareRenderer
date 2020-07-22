@@ -23,3 +23,6 @@ target_link_libraries(VertexProcessorTest renderer ${SDL2_LIBRARIES})
 
 add_executable(Box Box.cpp ObjData.cpp ObjData.h)
 target_link_libraries(Box renderer ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
+
+add_executable(Benchmark Benchmark.cpp Random.cpp Random.h)
+target_link_libraries(Benchmark renderer)
