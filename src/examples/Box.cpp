@@ -75,7 +75,7 @@ public:
 
 		out->x = position.x;
 		out->y = position.y;
-		out->z = position.y;
+		out->z = position.z;
 		out->w = position.w;
 		out->pvar[0] = data->texcoord.x;
 		out->pvar[1] = data->texcoord.y;
