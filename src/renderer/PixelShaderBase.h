@@ -122,6 +122,7 @@ protected:
 	static PixelData copyPixelData(PixelData &po)
 	{
 		PixelData pi;
+		pi.equations = po.equations;  // Copy the equations pointer
 		if (Derived::InterpolateZ) pi.z = po.z;
 		if (Derived::InterpolateW) { pi.w = po.w; pi.invw = po.invw; }
 		for (int i = 0; i < Derived::AVarCount; ++i)
