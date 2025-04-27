@@ -91,7 +91,18 @@ mat4f VertexShader::modelViewProjectionMatrix;
 
 int main(int argc, char *argv[])
 {
-    SDL_Init(SDL_INIT_VIDEO);
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        fprintf(stderr, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    // Initialize SDL_image
+    int imgFlags = IMG_INIT_PNG;
+    if (!(IMG_Init(imgFlags) & imgFlags)) {
+        fprintf(stderr, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+        SDL_Quit();
+        return 1;
+    }
 
     SDL_Window *window = SDL_CreateWindow(
         "Box",
@@ -101,45 +112,121 @@ int main(int argc, char *argv[])
         480,
         0
     );
+    
+    if (!window) {
+        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
 
     SDL_Surface *screen = SDL_GetWindowSurface(window);
-    SDL_Surface *tmp = IMG_Load("data/box.png");
-    SDL_Surface *baseTex = SDL_ConvertSurface(tmp, screen->format, 0);
-    SDL_FreeSurface(tmp);
+    if (!screen) {
+        fprintf(stderr, "Could not get window surface! SDL_Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
 
-    // Create texture with mipmaps
-    PixelShader::texture = std::make_shared<Texture>(baseTex);
-    PixelShader::surface = screen;
+    try {
+        SDL_Surface *tmp = IMG_Load("data/box.png");
+        if (!tmp) {
+            throw std::runtime_error(std::string("Could not load texture! SDL_image Error: ") + IMG_GetError());
+        }
 
-    std::vector<ObjData::VertexArrayData> vdata;
-    std::vector<int> idata;
-    ObjData::loadFromFile("data/box.obj").toVertexArray(vdata, idata);
+        SDL_Surface *baseTex = SDL_ConvertSurface(tmp, screen->format, 0);
+        SDL_FreeSurface(tmp);
 
-    Rasterizer r;
-    VertexProcessor v(&r);
-    
-    r.setRasterMode(RasterMode::Span);
-    r.setScissorRect(0, 0, 640, 480);
-    r.setPixelShader<PixelShader>();
+        if (!baseTex) {
+            throw std::runtime_error(std::string("Could not convert texture surface! SDL Error: ") + SDL_GetError());
+        }
 
-    v.setViewport(0, 0, 640, 480);
-    v.setCullMode(CullMode::CW);
-    v.setVertexShader<VertexShader>();
+        // Create texture with mipmaps
+        PixelShader::texture = std::make_shared<Texture>(baseTex);
+        PixelShader::surface = screen;
 
-    mat4f lookAtMatrix = vmath::lookat_matrix(vec3f(3.0f, 2.0f, 5.0f), vec3f(0.0f), vec3f(0.0f, 1.0f, 0.0f));
-    mat4f perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, 10.0f);
-    VertexShader::modelViewProjectionMatrix = perspectiveMatrix * lookAtMatrix;
+        std::vector<ObjData::VertexArrayData> vdata;
+        std::vector<int> idata;
+        ObjData::loadFromFile("data/box.obj").toVertexArray(vdata, idata);
 
-    v.setVertexAttribPointer(0, sizeof(ObjData::VertexArrayData), &vdata[0]);
-    v.drawElements(DrawMode::Triangle, idata.size(), &idata[0]);
+        Rasterizer r;
+        VertexProcessor v(&r);
+        
+        r.setRasterMode(RasterMode::Span);
+        r.setScissorRect(0, 0, 640, 480);
+        r.setPixelShader<PixelShader>();
 
-    SDL_UpdateWindowSurface(window);
+        v.setViewport(0, 0, 640, 480);
+        v.setCullMode(CullMode::CW);
+        v.setVertexShader<VertexShader>();
 
-    SDL_Event e;
-    while (SDL_WaitEvent(&e) && e.type != SDL_QUIT);
+        // Animation and timing variables
+        Uint32 lastFrameTime = SDL_GetTicks();
+        Uint32 lastFPSUpdate = lastFrameTime;
+        int frameCount = 0;
+        float angle = 0.0f;
+        const float angularSpeed = 0.5f; // Radians per second
+        
+        bool running = true;
+        SDL_Event e;
+        
+        while (running) {
+            // Handle events
+            while (SDL_PollEvent(&e)) {
+                if (e.type == SDL_QUIT) {
+                    running = false;
+                    break;
+                }
+            }
 
-    // Texture will be automatically cleaned up by shared_ptr
+            // Calculate frame timing
+            Uint32 currentTime = SDL_GetTicks();
+            float deltaTime = (currentTime - lastFrameTime) / 1000.0f;
+            lastFrameTime = currentTime;
+            
+            // Update camera position
+            angle += angularSpeed * deltaTime;
+            float camX = 5.0f * cos(angle);
+            float camZ = 5.0f * sin(angle);
+            
+            mat4f lookAtMatrix = vmath::lookat_matrix(vec3f(camX, 2.0f, camZ), vec3f(0.0f), vec3f(0.0f, 1.0f, 0.0f));
+            mat4f perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, 10.0f);
+            VertexShader::modelViewProjectionMatrix = perspectiveMatrix * lookAtMatrix;
+
+            // Clear screen (set to black)
+            SDL_FillRect(screen, NULL, 0);
+
+            // Draw the box
+            v.setVertexAttribPointer(0, sizeof(ObjData::VertexArrayData), &vdata[0]);
+            v.drawElements(DrawMode::Triangle, idata.size(), &idata[0]);
+
+            SDL_UpdateWindowSurface(window);
+            
+            // Update FPS counter every second
+            frameCount++;
+            if (currentTime - lastFPSUpdate >= 1000) {
+                float fps = frameCount * 1000.0f / (currentTime - lastFPSUpdate);
+                char title[64];
+                snprintf(title, sizeof(title), "Box - FPS: %.1f", fps);
+                SDL_SetWindowTitle(window, title);
+                
+                frameCount = 0;
+                lastFPSUpdate = currentTime;
+            }
+        }
+
+    } catch (const std::exception& e) {
+        fprintf(stderr, "Error: %s\n", e.what());
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // Cleanup
     SDL_DestroyWindow(window);
+    IMG_Quit();
     SDL_Quit();
 
     return 0;
