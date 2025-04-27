@@ -214,6 +214,8 @@ int main(int argc, char *argv[])
                 frameCount = 0;
                 lastFPSUpdate = currentTime;
             }
+
+            SDL_Delay(0);
         }
 
     } catch (const std::exception& e) {

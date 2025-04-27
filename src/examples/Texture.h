@@ -22,7 +22,6 @@ public:
             throw std::runtime_error("Base surface has no pixel data");
         }
         generateMipmaps(baseSurface);
-        std::cout << "Texture initialized with " << m_mipmaps.size() << " mip levels" << std::endl;
     }
 
     ~Texture() {
@@ -47,7 +46,6 @@ public:
 
         SDL_Surface* baseLevel = m_mipmaps[0];
         if (!baseLevel || !baseLevel->pixels) {
-            std::cerr << "Invalid base level texture in sample()" << std::endl;
             outColor = 0;
             return;
         }
@@ -147,14 +145,12 @@ private:
 
     void sampleBilinear(int mipLevel, float u, float v, Uint32& outColor) const {
         if (mipLevel < 0 || mipLevel >= m_mipmaps.size()) {
-            std::cerr << "Invalid mip level " << mipLevel << " (max: " << m_mipmaps.size()-1 << ")" << std::endl;
             outColor = 0;
             return;
         }
 
         SDL_Surface* mip = m_mipmaps[mipLevel];
         if (!mip || !mip->pixels) {
-            std::cerr << "Invalid mip level surface at level " << mipLevel << std::endl;
             outColor = 0;
             return;
         }
@@ -172,7 +168,6 @@ private:
 
         Uint32* pixels = static_cast<Uint32*>(mip->pixels);
         if (!pixels) {
-            std::cerr << "Null pixel data in mip level " << mipLevel << std::endl;
             outColor = 0;
             return;
         }
@@ -259,7 +254,6 @@ private:
                 0x00000000); // A mask
 
             if (!newMip) {
-                std::cerr << "Failed to create mip surface: " << SDL_GetError() << std::endl;
                 break;
             }
 
@@ -296,8 +290,6 @@ private:
             width = newWidth;
             height = newHeight;
         }
-
-        std::cout << "Generated " << m_mipmaps.size() << " mipmap levels" << std::endl;
     }
 
     void cleanup() {
