@@ -22,12 +22,22 @@ public:
     Texture& operator=(const Texture&) = delete;
 
     void sample(float u, float v, float dudx, float dvdx, float dudy, float dvdy, Uint32& outColor) const {
-        // Compute level of detail for mip-mapping
-        float maxDeriv = std::max(
-            std::sqrt(dudx * dudx + dvdx * dvdx),  // Length of du/dx vector
-            std::sqrt(dudy * dudy + dvdy * dvdy)   // Length of du/dy vector
+        SDL_Surface* baseLevel = m_mipmaps[0];
+        
+        // Scale derivatives by texture dimensions
+        float dudx_scaled = dudx * baseLevel->w;
+        float dvdx_scaled = dvdx * baseLevel->h;
+        float dudy_scaled = dudy * baseLevel->w;
+        float dvdy_scaled = dvdy * baseLevel->h;
+        
+        // Compute maximum rate of change in either direction
+        float rho = std::max(
+            std::max(std::sqrt(dudx_scaled * dudx_scaled + dvdx_scaled * dvdx_scaled),  // Length of d/dx
+                    std::sqrt(dudy_scaled * dudy_scaled + dvdy_scaled * dvdy_scaled)),   // Length of d/dy
+            1e-6f  // Avoid log2(0)
         );
-        float lod = std::log2(maxDeriv);
+        
+        float lod = std::log2(rho);
         
         // Get the two mip levels to interpolate between
         int lodBase = std::max(0, int(std::floor(lod)));
