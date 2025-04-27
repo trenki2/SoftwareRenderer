@@ -9,7 +9,10 @@ namespace swr {
 
 class Texture {
 public:
-    Texture(SDL_Surface* baseSurface) {
+    static constexpr int MAX_ANISOTROPY = 16;
+    
+    Texture(SDL_Surface* baseSurface, int maxAnisotropy = 8) 
+        : m_maxAnisotropy(std::clamp(maxAnisotropy, 1, MAX_ANISOTROPY)) {
         generateMipmaps(baseSurface);
     }
 
@@ -22,7 +25,17 @@ public:
     Texture& operator=(const Texture&) = delete;
 
     void sample(float u, float v, float dudx, float dvdx, float dudy, float dvdy, Uint32& outColor) const {
+        // Safely wrap texture coordinates
+        u = std::fmod(u, 1.0f);
+        v = std::fmod(v, 1.0f);
+        if (u < 0) u += 1.0f;
+        if (v < 0) v += 1.0f;
+
         SDL_Surface* baseLevel = m_mipmaps[0];
+        if (!baseLevel || !baseLevel->pixels) {
+            outColor = 0;
+            return;
+        }
         
         // Scale derivatives by texture dimensions
         float dudx_scaled = dudx * baseLevel->w;
@@ -30,30 +43,84 @@ public:
         float dudy_scaled = dudy * baseLevel->w;
         float dvdy_scaled = dvdy * baseLevel->h;
         
-        // Compute maximum rate of change in either direction
-        float rho = std::max(
-            std::max(std::sqrt(dudx_scaled * dudx_scaled + dvdx_scaled * dvdx_scaled),  // Length of d/dx
-                    std::sqrt(dudy_scaled * dudy_scaled + dvdy_scaled * dvdy_scaled)),   // Length of d/dy
-            1e-6f  // Avoid log2(0)
-        );
+        // Compute ellipse axes
+        float dx_len = std::sqrt(dudx_scaled * dudx_scaled + dvdx_scaled * dvdx_scaled);
+        float dy_len = std::sqrt(dudy_scaled * dudy_scaled + dvdy_scaled * dvdy_scaled);
         
-        float lod = std::log2(rho);
+        // Ensure numerical stability
+        dx_len = std::max(dx_len, 1e-6f);
+        dy_len = std::max(dy_len, 1e-6f);
+
+        float major_len = std::max(dx_len, dy_len);
+        float minor_len = std::min(dx_len, dy_len);
         
-        // Get the two mip levels to interpolate between
-        int lodBase = std::max(0, int(std::floor(lod)));
-        int lodNext = std::min(lodBase + 1, (int)m_mipmaps.size() - 1);
+        // Calculate anisotropic ratio
+        float ratio = std::min(major_len / minor_len, static_cast<float>(m_maxAnisotropy));
+        int num_samples = std::max(1, static_cast<int>(std::ceil(ratio)));
+
+        if (num_samples <= 1) {
+            // Use regular trilinear filtering for low anisotropy
+            sampleTrilinear(u, v, major_len, outColor);
+            return;
+        }
+
+        // Determine major axis direction
+        float major_du, major_dv;
+        if (dx_len > dy_len) {
+            major_du = dudx / dx_len;
+            major_dv = dvdx / dx_len;
+        } else {
+            major_du = dudy / dy_len;
+            major_dv = dvdy / dy_len;
+        }
+
+        // Accumulate color components
+        float r = 0, g = 0, b = 0;
+        float step = 1.0f / num_samples;
+        
+        for (int i = 0; i < num_samples; ++i) {
+            float t = (i + 0.5f) * step - 0.5f;
+            float sample_u = u + major_du * major_len * t;
+            float sample_v = v + major_dv * major_len * t;
+            
+            // Rewrap coordinates
+            sample_u = std::fmod(sample_u, 1.0f);
+            sample_v = std::fmod(sample_v, 1.0f);
+            if (sample_u < 0) sample_u += 1.0f;
+            if (sample_v < 0) sample_v += 1.0f;
+
+            Uint32 sample_color;
+            sampleTrilinear(sample_u, sample_v, minor_len, sample_color);
+            
+            r += getR(sample_color);
+            g += getG(sample_color);
+            b += getB(sample_color);
+        }
+        
+        // Average samples
+        r = std::min(255.0f, r / num_samples);
+        g = std::min(255.0f, g / num_samples);
+        b = std::min(255.0f, b / num_samples);
+        
+        outColor = packRGB(static_cast<Uint8>(r), static_cast<Uint8>(g), static_cast<Uint8>(b));
+    }
+
+private:
+    void sampleTrilinear(float u, float v, float rho, Uint32& outColor) const {
+        float lod = std::log2(std::max(rho, 1e-6f));
+        lod = std::max(0.0f, lod); // Ensure non-negative LOD
+        
+        int lodBase = static_cast<int>(std::floor(lod));
+        int lodNext = std::min(lodBase + 1, static_cast<int>(m_mipmaps.size()) - 1);
         float lodFrac = std::clamp(lod - lodBase, 0.0f, 1.0f);
 
-        // Sample from both mip levels using bilinear filtering
         Uint32 colorBase, colorNext;
         sampleBilinear(lodBase, u, v, colorBase);
         sampleBilinear(lodNext, u, v, colorNext);
 
-        // Linearly interpolate between the two mip levels
         outColor = lerpColors(colorBase, colorNext, lodFrac);
     }
 
-private:
     void sampleBilinear(int mipLevel, float u, float v, Uint32& outColor) const {
         SDL_Surface* mip = m_mipmaps[mipLevel];
 
@@ -198,6 +265,7 @@ private:
 
 private:
     std::vector<SDL_Surface*> m_mipmaps;
+    int m_maxAnisotropy;
 
     // Helper function to clamp a float value between 0 and 1
     static float clamp(float value, float min, float max) {
